@@ -1,6 +1,7 @@
 
 import bpy
 import bmesh
+import mathutils
 
 
 def import_visuals(level):
@@ -65,8 +66,16 @@ def import_visuals(level):
             bpy.context.scene.objects.link(bpy_object)
 
             if visual.tree_xform:
-                loc_x, loc_y, loc_z = visual.tree_xform[12 : 15]
-                bpy_object.location = loc_x, loc_z, loc_y
-                '''for i in visual.tree_xform:
-                    print(round(i, 2), end=' ')
-                print()'''
+                t = visual.tree_xform
+                transform_matrix = mathutils.Matrix((
+                    (t[0], t[1], t[2], t[3]),
+                    (t[4], t[5], t[6], t[7]),
+                    (t[8], t[9], t[10], t[11]),
+                    (t[12], t[13], t[14], t[15])
+                    ))
+                transform_matrix.transpose()
+                translate, rotate, scale = transform_matrix.decompose()
+                bpy_object.location = translate[0], translate[2], translate[1]
+                bpy_object.scale = scale[0], scale[2], scale[1]
+                rotate = rotate.to_euler('ZXY')
+                bpy_object.rotation_euler = -rotate[0], -rotate[2], -rotate[1]
