@@ -19,7 +19,7 @@ def import_visuals(level):
             bpy_mesh_name = loaded_visuals.get(visual_key)
             if not bpy_mesh_name:
                 b_mesh = bmesh.new()
-                bpy_mesh = bpy.data.meshes.new('visual')
+                bpy_mesh = bpy.data.meshes.new(visual.type)
                 bpy_mesh.materials.append(level.materials[visual.shader_id])
 
                 vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
@@ -33,7 +33,7 @@ def import_visuals(level):
                 indices = indices_buffer[visual.gcontainer.ib_offset : visual.gcontainer.ib_offset + visual.gcontainer.ib_size]
 
                 if not visual.swi_index is None:
-                    swidata = level.swis_buffers[visual.swi_index]
+                    visual.swidata = level.swis_buffers[visual.swi_index]
 
                 if visual.swidata:
                     indices = indices[visual.swidata[0].offset : ]
@@ -62,7 +62,7 @@ def import_visuals(level):
             else:
                 bpy_mesh = bpy.data.meshes[bpy_mesh_name]
 
-            bpy_object = bpy.data.objects.new('visual', bpy_mesh)
+            bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
 
             if visual.tree_xform:
