@@ -142,20 +142,36 @@ def read_indices(data, visual):
 
 def read_vertices(data, visual):
     packed_reader = xray_io.PackedReader(data)
+
     vertex_format = packed_reader.getf('I')[0]
     vertices_count = packed_reader.getf('I')[0]
-    if vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_1L:
+
+    if vertex_format == fmt_ogf.OGF_VERTEXFORMAT_FVF:
         for vertex_index in range(vertices_count):
+
+            coord_x, coord_y, coord_z = packed_reader.getf('3f')
+            normal_x, normal_y, normal_z = packed_reader.getf('3f')
+            texture_coord_u, texture_coord_v = packed_reader.getf('2f')
+
+            visual.vertices.append((coord_x, coord_z, coord_y))
+            visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+
+    elif vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_1L:
+        for vertex_index in range(vertices_count):
+
             coord_x, coord_y, coord_z = packed_reader.getf('3f')
             normal_x, normal_y, normal_z = packed_reader.getf('3f')
             tangent_x, tangent_y, tangent_z = packed_reader.getf('3f')
             binormal_x, binormal_y, binormal_z = packed_reader.getf('3f')
             texture_coord_u, texture_coord_v = packed_reader.getf('2f')
             bone_influence = packed_reader.getf('I')[0]
+
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+
     elif vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_2L:
         for vertex_index in range(vertices_count):
+
             bone_0 = packed_reader.getf('H')[0]
             bone_1 = packed_reader.getf('H')[0]
             coord_x, coord_y, coord_z = packed_reader.getf('3f')
@@ -164,8 +180,10 @@ def read_vertices(data, visual):
             binormal_x, binormal_y, binormal_z = packed_reader.getf('3f')
             bone_influence = packed_reader.getf('f')[0]
             texture_coord_u, texture_coord_v = packed_reader.getf('2f')
+
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+
     else:
         raise BaseException('Unknown vertex format: 0x{:x}'.format(vertex_format))
 
