@@ -73,6 +73,21 @@ def read_treedef2(data, visual):
     visual.tree_xform = tree_xform
 
 
+def read_desc(data):
+    packed_reader = xray_io.PackedReader(data)
+
+    source = packed_reader.gets()
+
+    export_tool = packed_reader.gets()
+    export_time = packed_reader.getf('I')[0]
+
+    owner_name = packed_reader.gets()
+    creation_time = packed_reader.getf('I')[0]
+
+    modif_name = packed_reader.gets()
+    modified_time = packed_reader.getf('I')[0]
+
+
 def read_loddef2(data):
     packed_reader = xray_io.PackedReader(data)
     for i in range(8):
@@ -164,7 +179,11 @@ def read_texture(data, visual):
 
 def read_header(data, visual):
     packed_reader = xray_io.PackedReader(data)
+
     ogf_version = packed_reader.getf('B')[0]
+    if ogf_version != 4:
+        raise BaseException('Unsupported format version: {0}'.format(ogf_version))
+
     model_type = packed_reader.getf('B')[0]
     shader_id = packed_reader.getf('H')[0]
     if ogf_version == 4:
@@ -198,6 +217,8 @@ def read_main(data, ogf=False):
             read_loddef2(chunk_data)
         elif chunk_id == fmt_ogf.Chunks.TREEDEF2:
             read_treedef2(chunk_data, visual)
+        elif chunk_id == fmt_ogf.Chunks.DESC:
+            read_desc(chunk_data)
         elif chunk_id == fmt_ogf.Chunks.SWICONTAINER:
             read_swicontainer(chunk_data, visual)
         elif chunk_id == fmt_ogf.Chunks.GCONTAINER:

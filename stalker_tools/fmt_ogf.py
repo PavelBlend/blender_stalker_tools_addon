@@ -9,6 +9,7 @@ class Chunks:
     CHILDREN_L = 0xa
     LODDEF2 = 0xb
     TREEDEF2 = 0xc
+    DESC = 0x12
     SWICONTAINER = 0x14
     GCONTAINER = 0x15
     FASTPATH = 0x16
