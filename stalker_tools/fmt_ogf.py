@@ -1,7 +1,11 @@
 
 class Chunks:
     HEADER = 0x1
+    TEXTURE = 0x2
+    VERTICES = 0x3
+    INDICES = 0x4
     SWIDATA = 0x6
+    CHILDREN = 0x9
     CHILDREN_L = 0xa
     LODDEF2 = 0xb
     TREEDEF2 = 0xc
@@ -37,3 +41,7 @@ model_types = {
     0xa: SKELETON_RIGID,
     0xb: TREE_PM
 }
+
+OGF4_VERTEXFORMAT_FVF_1L = 0x12071980
+OGF4_VERTEXFORMAT_FVF_2L = 0x240e3300
+OGF4_VERTEXFORMAT_FVF_NL = 0x36154c80

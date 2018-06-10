@@ -4,6 +4,60 @@ import bmesh
 import mathutils
 
 
+def import_visual(visual):
+    if visual.vertices and visual.indices:
+        b_mesh = bmesh.new()
+        bpy_mesh = bpy.data.meshes.new(visual.type)
+        for vertex in visual.vertices:
+            b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
+        b_mesh.verts.ensure_lookup_table()
+
+        if visual.swidata:
+            visual.indices = visual.indices[visual.swidata[0].offset : ]
+
+        for i in range(0, len(visual.indices), 3):
+            v1 = b_mesh.verts[visual.indices[i]]
+            v2 = b_mesh.verts[visual.indices[i + 2]]
+            v3 = b_mesh.verts[visual.indices[i + 1]]
+            try:
+                face = b_mesh.faces.new((v1, v2, v3))
+                face.smooth = True
+            except ValueError:
+                pass
+        b_mesh.faces.ensure_lookup_table()
+        b_mesh.normal_update()
+
+        uv_layer = b_mesh.loops.layers.uv.new('Texture')
+        for face in b_mesh.faces:
+            for loop in face.loops:
+                loop[uv_layer].uv = visual.uvs[loop.vert.index]
+
+        abs_image_path = 'D:\\stalker\\xray_sdk_yurshat_repack\\editors\\gamedata\\textures\\' + visual.texture + '.dds'
+        bpy_mat = bpy.data.materials.new(visual.texture)
+        bpy_mat.use_shadeless = True
+        bpy_mat.use_transparency = True
+        bpy_mat.alpha = 0.0
+        bpy_tex = bpy.data.textures.new(visual.texture, type='IMAGE')
+        bpy_tex.type = 'IMAGE'
+        bpy_texture_slot = bpy_mat.texture_slots.add()
+        bpy_texture_slot.texture = bpy_tex
+        bpy_texture_slot.use_map_alpha = True
+
+        try:
+            bpy_image = bpy.data.images.load(abs_image_path)
+        except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
+            bpy_image = bpy.data.images.new(visual.texture, 0, 0)
+            bpy_image.source = 'FILE'
+            bpy_image.filepath = abs_image_path
+
+        bpy_tex.image = bpy_image
+        bpy_mesh.materials.append(bpy_mat)
+
+        b_mesh.to_mesh(bpy_mesh)
+        bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
+        bpy.context.scene.objects.link(bpy_object)
+
+
 def import_visuals(level):
     loaded_visuals = {}
     for visual in level.visuals:

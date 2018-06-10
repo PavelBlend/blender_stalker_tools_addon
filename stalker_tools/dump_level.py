@@ -82,7 +82,8 @@ def read_portals(data):
 def read_visuals(data, level):
     chunked_reader = xray_io.ChunkedReader(data)
     for visual_index, visual_data in chunked_reader:
-        dump_ogf.read_main(visual_data, level)
+        visual = dump_ogf.read_main(visual_data)
+        level.visuals.append(visual)
 
 
 def read_shaders(data, level):

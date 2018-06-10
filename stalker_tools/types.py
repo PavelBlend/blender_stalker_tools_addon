@@ -40,3 +40,7 @@ class Visual:
         self.swi_index = None
         self.tree_xform = None
         self.chunks = []
+        self.vertices = []
+        self.uvs = []
+        self.indices = []
+        self.texture = None

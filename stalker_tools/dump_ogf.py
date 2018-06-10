@@ -5,6 +5,7 @@ import bmesh
 from . import xray_io
 from . import fmt_ogf
 from . import types
+from . import importer
 
 
 def read_ogf_color(packed_reader):
@@ -90,6 +91,12 @@ def read_children_l(data):
         children = packed_reader.getf('I')[0]
 
 
+def read_children(data):
+    chunked_reader = xray_io.ChunkedReader(data)
+    for child_id, child_data in chunked_reader:
+        read_main(child_data, ogf=True)
+
+
 def read_swidata(data, visual, fast_path=False):
     packed_reader = xray_io.PackedReader(data)
     swis = []
@@ -110,6 +117,51 @@ def read_swidata(data, visual, fast_path=False):
         visual.swidata = swis
 
 
+def read_indices(data, visual):
+    packed_reader = xray_io.PackedReader(data)
+    indices_count = packed_reader.getf('I')[0]
+    for index in range(indices_count):
+        vertex_index = packed_reader.getf('H')[0]
+        visual.indices.append(vertex_index)
+
+
+def read_vertices(data, visual):
+    packed_reader = xray_io.PackedReader(data)
+    vertex_format = packed_reader.getf('I')[0]
+    vertices_count = packed_reader.getf('I')[0]
+    if vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_1L:
+        for vertex_index in range(vertices_count):
+            coord_x, coord_y, coord_z = packed_reader.getf('3f')
+            normal_x, normal_y, normal_z = packed_reader.getf('3f')
+            tangent_x, tangent_y, tangent_z = packed_reader.getf('3f')
+            binormal_x, binormal_y, binormal_z = packed_reader.getf('3f')
+            texture_coord_u, texture_coord_v = packed_reader.getf('2f')
+            bone_influence = packed_reader.getf('I')[0]
+            visual.vertices.append((coord_x, coord_z, coord_y))
+            visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+    elif vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_2L:
+        for vertex_index in range(vertices_count):
+            bone_0 = packed_reader.getf('H')[0]
+            bone_1 = packed_reader.getf('H')[0]
+            coord_x, coord_y, coord_z = packed_reader.getf('3f')
+            normal_x, normal_y, normal_z = packed_reader.getf('3f')
+            tangent_x, tangent_y, tangent_z = packed_reader.getf('3f')
+            binormal_x, binormal_y, binormal_z = packed_reader.getf('3f')
+            bone_influence = packed_reader.getf('f')[0]
+            texture_coord_u, texture_coord_v = packed_reader.getf('2f')
+            visual.vertices.append((coord_x, coord_z, coord_y))
+            visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+    else:
+        raise BaseException('Unknown vertex format: 0x{:x}'.format(vertex_format))
+
+
+def read_texture(data, visual):
+    packed_reader = xray_io.PackedReader(data)
+    texture = packed_reader.gets()
+    shader = packed_reader.gets()
+    visual.texture = texture
+
+
 def read_header(data, visual):
     packed_reader = xray_io.PackedReader(data)
     ogf_version = packed_reader.getf('B')[0]
@@ -123,15 +175,23 @@ def read_header(data, visual):
     visual.shader_id = shader_id
 
 
-def read_main(data, level):
+def read_main(data, ogf=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
     for chunk_id, chunk_data in chunked_reader:
         visual.chunks.append(hex(chunk_id))
         if chunk_id == fmt_ogf.Chunks.HEADER:
             read_header(chunk_data, visual)
+        elif chunk_id == fmt_ogf.Chunks.TEXTURE:
+            read_texture(chunk_data, visual)
+        elif chunk_id == fmt_ogf.Chunks.VERTICES:
+            read_vertices(chunk_data, visual)
+        elif chunk_id == fmt_ogf.Chunks.INDICES:
+            read_indices(chunk_data, visual)
         elif chunk_id == fmt_ogf.Chunks.SWIDATA:
             read_swidata(chunk_data, visual)
+        elif chunk_id == fmt_ogf.Chunks.CHILDREN:
+            read_children(chunk_data)
         elif chunk_id == fmt_ogf.Chunks.CHILDREN_L:
             read_children_l(chunk_data)
         elif chunk_id == fmt_ogf.Chunks.LODDEF2:
@@ -146,11 +206,13 @@ def read_main(data, level):
             read_fastpath(chunk_data, visual)
         else:
             print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
-    level.visuals.append(visual)
+    if ogf:
+        importer.import_visual(visual)
+    return visual
 
 
 def read_file(file_path):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    read_main(data)
+    read_main(data, ogf=True)
