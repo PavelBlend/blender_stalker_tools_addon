@@ -64,6 +64,85 @@ def read_swicontainer(data, visual):
     visual.swi_index = swi_index
 
 
+def read_s_joint_limit(packed_reader):
+    limit = packed_reader.getf('2f')
+    spring_factor = packed_reader.getf('f')[0]
+    damping_factor = packed_reader.getf('f')[0]
+
+
+def read_s_joint_ik_data(packed_reader):
+    type = packed_reader.getf('I')[0]
+
+    read_s_joint_limit(packed_reader)
+    read_s_joint_limit(packed_reader)
+    read_s_joint_limit(packed_reader)
+
+    spring_factor = packed_reader.getf('f')[0]
+    damping_factor = packed_reader.getf('f')[0]
+    ik_flags = packed_reader.getf('I')[0]
+    break_force = packed_reader.getf('f')[0]
+    break_torque = packed_reader.getf('f')[0]
+    friction = packed_reader.getf('f')[0]
+
+
+def read_s_bone_shape(packed_reader):
+    type = packed_reader.getf('H')[0]
+    flags = packed_reader.getf('H')[0]
+    read_obb(packed_reader)
+    read_sphere(packed_reader)
+    read_cylinder(packed_reader)
+
+
+def read_s_ikdata(data, bones):
+    packed_reader = xray_io.PackedReader(data)
+
+    for bone in bones:
+        version = packed_reader.getf('I')[0]
+        game_material = packed_reader.gets()
+
+        read_s_bone_shape(packed_reader)
+        read_s_joint_ik_data(packed_reader)
+
+        bind_offset = packed_reader.getf('3f')
+        bind_rotate = packed_reader.getf('3f')
+        mass = packed_reader.getf('f')[0]
+        center_of_mass = packed_reader.getf('3f')
+
+
+def read_cylinder(packed_reader):
+    center = packed_reader.getf('3f')
+    direction = packed_reader.getf('3f')
+    height = packed_reader.getf('f')[0]
+    radius = packed_reader.getf('f')[0]
+
+
+def read_sphere(packed_reader):
+    position = packed_reader.getf('3f')
+    radius = packed_reader.getf('f')[0]
+
+
+def read_obb(packed_reader):
+    rotate = packed_reader.getf('9f')
+    translate = packed_reader.getf('3f')
+    halfsize = packed_reader.getf('3f')
+
+
+def read_s_bone_names(data):
+    packed_reader = xray_io.PackedReader(data)
+
+    bones = []
+    bones_count = packed_reader.getf('I')[0]
+
+    for bone_index in range(bones_count):
+        bone_name = packed_reader.gets()
+        bone_parent = packed_reader.gets()
+        read_obb(packed_reader)
+
+        bones.append(bone_name)
+
+    return bones
+
+
 def read_treedef2(data, visual):
     packed_reader = xray_io.PackedReader(data)
     tree_xform = packed_reader.getf('16f')
@@ -215,38 +294,61 @@ def read_header(data, visual):
 def read_main(data, ogf=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
+
     for chunk_id, chunk_data in chunked_reader:
         visual.chunks.append(hex(chunk_id))
+
         if chunk_id == fmt_ogf.Chunks.HEADER:
             read_header(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.TEXTURE:
             read_texture(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.VERTICES:
             read_vertices(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.INDICES:
             read_indices(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.SWIDATA:
             read_swidata(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.CHILDREN:
             read_children(chunk_data)
+
         elif chunk_id == fmt_ogf.Chunks.CHILDREN_L:
             read_children_l(chunk_data)
+
         elif chunk_id == fmt_ogf.Chunks.LODDEF2:
             read_loddef2(chunk_data)
+
         elif chunk_id == fmt_ogf.Chunks.TREEDEF2:
             read_treedef2(chunk_data, visual)
+
+        elif chunk_id == fmt_ogf.Chunks.S_BONE_NAMES:
+            bones = read_s_bone_names(chunk_data)
+
+        elif chunk_id == fmt_ogf.Chunks.S_IKDATA:
+            read_s_ikdata(chunk_data, bones)
+
         elif chunk_id == fmt_ogf.Chunks.DESC:
             read_desc(chunk_data)
+
         elif chunk_id == fmt_ogf.Chunks.SWICONTAINER:
             read_swicontainer(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.GCONTAINER:
             read_gcontainer(chunk_data, visual)
+
         elif chunk_id == fmt_ogf.Chunks.FASTPATH:
             read_fastpath(chunk_data, visual)
+
         else:
             print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
+
     if ogf:
         importer.import_visual(visual)
+
     return visual
 
 
