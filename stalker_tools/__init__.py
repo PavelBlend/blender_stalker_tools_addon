@@ -28,9 +28,9 @@ class OpImportStalkerLevel(bpy.types.Operator, io_utils.ImportHelper):
     filter_glob = bpy.props.StringProperty(default='level', options={'HIDDEN'})
 
     def execute(self, context):
-        from . import dump_level
+        from . import read_level
         st = time.time()
-        dump_level.read_file(self.filepath)
+        read_level.read_file(self.filepath)
         print('total time: ', time.time() - st)
         return {'FINISHED'}
 
@@ -48,10 +48,10 @@ class OpImportStalkerOGF(bpy.types.Operator, io_utils.ImportHelper):
     filter_glob = bpy.props.StringProperty(default='*.ogf', options={'HIDDEN'})
 
     def execute(self, context):
-        from . import dump_ogf
+        from . import read_ogf
         st = time.time()
         for file in self.files:
-            dump_ogf.read_file(os.path.join(self.directory, file.name))
+            read_ogf.read_file(os.path.join(self.directory, file.name))
         print('total time: ', time.time() - st)
         return {'FINISHED'}
 

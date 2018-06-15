@@ -4,9 +4,9 @@ import time
 import bpy
 
 from . import xray_io
-from . import fmt_level
-from . import dump_ogf
-from . import dump_level_geom
+from . import format_level
+from . import read_ogf
+from . import read_level_geom
 from . import importer
 
 
@@ -25,9 +25,9 @@ def read_sector_portal(data):
 def read_sector(data):
     chunked_reader = xray_io.ChunkedReader(data)
     for chunk_id, chunk_data in chunked_reader:
-        if chunk_id == fmt_level.Chunks.Sector.PORTALS:
+        if chunk_id == format_level.Chunks.Sector.PORTALS:
             read_sector_portal(chunk_data)
-        elif chunk_id == fmt_level.Chunks.Sector.ROOT:
+        elif chunk_id == format_level.Chunks.Sector.ROOT:
             read_sector_root(chunk_data)
         else:
             print('UNKNOW LEVEL SECTOR CHUNK: {0:#x}'.format(chunk_id))
@@ -82,7 +82,7 @@ def read_portals(data):
 def read_visuals(data, level):
     chunked_reader = xray_io.ChunkedReader(data)
     for visual_index, visual_data in chunked_reader:
-        visual = dump_ogf.read_main(visual_data)
+        visual = read_ogf.read_main(visual_data)
         level.visuals.append(visual)
 
 
@@ -136,19 +136,19 @@ def read_main(data, level):
     st = time.time()
     chunked_reader = xray_io.ChunkedReader(data)
     for chunk_id, chunk_data in chunked_reader:
-        if chunk_id == fmt_level.Chunks.Level.HEADER:
+        if chunk_id == format_level.Chunks.Level.HEADER:
             read_header(chunk_data)
-        elif chunk_id == fmt_level.Chunks.Level.SHADERS:
+        elif chunk_id == format_level.Chunks.Level.SHADERS:
             read_shaders(chunk_data, level)
-        elif chunk_id == fmt_level.Chunks.Level.VISUALS:
+        elif chunk_id == format_level.Chunks.Level.VISUALS:
             visuals_chunk_data = chunk_data
-        elif chunk_id == fmt_level.Chunks.Level.PORTALS:
+        elif chunk_id == format_level.Chunks.Level.PORTALS:
             read_portals(chunk_data)
-        elif chunk_id == fmt_level.Chunks.Level.LIGHT_DYNAMIC:
+        elif chunk_id == format_level.Chunks.Level.LIGHT_DYNAMIC:
             read_light_dynamic(chunk_data)
-        elif chunk_id == fmt_level.Chunks.Level.GLOWS:
+        elif chunk_id == format_level.Chunks.Level.GLOWS:
             read_glows(chunk_data)
-        elif chunk_id == fmt_level.Chunks.Level.SECTORS:
+        elif chunk_id == format_level.Chunks.Level.SECTORS:
             read_sectors(chunk_data)
         else:
             print('UNKNOW LEVEL CHUNK: {0:#x}'.format(chunk_id))
@@ -165,7 +165,7 @@ def read_main(data, level):
 
 def read_file(file_path):
     st = time.time()
-    level = dump_level_geom.read_file(file_path + '.geom')
+    level = read_level_geom.read_file(file_path + '.geom')
     print('load geom:', time.time() - st)
     file = open(file_path, 'rb')
     data = file.read()

@@ -3,7 +3,7 @@ import bpy
 import bmesh
 
 from . import xray_io
-from . import fmt_ogf
+from . import format_ogf
 from . import types
 from . import importer
 
@@ -27,9 +27,9 @@ def read_bbox(packed_reader):
 def read_fastpath(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
     for chunk_id, chunk_data in chunked_reader:
-        if chunk_id == fmt_ogf.Chunks.GCONTAINER:
+        if chunk_id == format_ogf.Chunks.GCONTAINER:
             read_gcontainer(chunk_data, visual, fast_path=True)
-        elif chunk_id == fmt_ogf.Chunks.SWIDATA:
+        elif chunk_id == format_ogf.Chunks.SWIDATA:
             read_swidata(chunk_data, visual, fast_path=True)
         else:
             print('UNKNOW OGF FASTPATH CHUNK: {0:#x}'.format(chunk_id))
@@ -285,7 +285,7 @@ def read_vertices(data, visual):
     vertex_format = packed_reader.getf('I')[0]
     vertices_count = packed_reader.getf('I')[0]
 
-    if vertex_format == fmt_ogf.OGF_VERTEXFORMAT_FVF:
+    if vertex_format == format_ogf.OGF_VERTEXFORMAT_FVF:
         for vertex_index in range(vertices_count):
 
             coord_x, coord_y, coord_z = packed_reader.getf('3f')
@@ -295,7 +295,7 @@ def read_vertices(data, visual):
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
 
-    elif vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_1L:
+    elif vertex_format == format_ogf.OGF4_VERTEXFORMAT_FVF_1L:
         for vertex_index in range(vertices_count):
 
             coord_x, coord_y, coord_z = packed_reader.getf('3f')
@@ -308,7 +308,7 @@ def read_vertices(data, visual):
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
 
-    elif vertex_format == fmt_ogf.OGF4_VERTEXFORMAT_FVF_2L:
+    elif vertex_format == format_ogf.OGF4_VERTEXFORMAT_FVF_2L:
         for vertex_index in range(vertices_count):
 
             bone_0 = packed_reader.getf('H')[0]
@@ -347,7 +347,7 @@ def read_header(data, visual):
         read_bbox(packed_reader)
         read_bsphere(packed_reader)
 
-    visual.type = fmt_ogf.model_types[model_type]
+    visual.type = format_ogf.model_types[model_type]
     visual.shader_id = shader_id
 
 
@@ -358,58 +358,58 @@ def read_main(data, ogf=False):
     for chunk_id, chunk_data in chunked_reader:
         visual.chunks.append(hex(chunk_id))
 
-        if chunk_id == fmt_ogf.Chunks.HEADER:
+        if chunk_id == format_ogf.Chunks.HEADER:
             read_header(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.TEXTURE:
+        elif chunk_id == format_ogf.Chunks.TEXTURE:
             read_texture(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.VERTICES:
+        elif chunk_id == format_ogf.Chunks.VERTICES:
             read_vertices(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.INDICES:
+        elif chunk_id == format_ogf.Chunks.INDICES:
             read_indices(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.SWIDATA:
+        elif chunk_id == format_ogf.Chunks.SWIDATA:
             read_swidata(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.CHILDREN:
+        elif chunk_id == format_ogf.Chunks.CHILDREN:
             read_children(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.CHILDREN_L:
+        elif chunk_id == format_ogf.Chunks.CHILDREN_L:
             read_children_l(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.LODDEF2:
+        elif chunk_id == format_ogf.Chunks.LODDEF2:
             read_loddef2(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.TREEDEF2:
+        elif chunk_id == format_ogf.Chunks.TREEDEF2:
             read_treedef2(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.S_BONE_NAMES:
+        elif chunk_id == format_ogf.Chunks.S_BONE_NAMES:
             bones = read_s_bone_names(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.S_SMPARAMS:
+        elif chunk_id == format_ogf.Chunks.S_SMPARAMS:
             read_s_smparams(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.S_IKDATA:
+        elif chunk_id == format_ogf.Chunks.S_IKDATA:
             read_s_ikdata(chunk_data, bones)
 
-        elif chunk_id == fmt_ogf.Chunks.S_USERDATA:
+        elif chunk_id == format_ogf.Chunks.S_USERDATA:
             read_s_userdata(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.DESC:
+        elif chunk_id == format_ogf.Chunks.DESC:
             read_desc(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.S_MOTION_REFS_0:
+        elif chunk_id == format_ogf.Chunks.S_MOTION_REFS_0:
             read_s_motion_refs_0(chunk_data)
 
-        elif chunk_id == fmt_ogf.Chunks.SWICONTAINER:
+        elif chunk_id == format_ogf.Chunks.SWICONTAINER:
             read_swicontainer(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.GCONTAINER:
+        elif chunk_id == format_ogf.Chunks.GCONTAINER:
             read_gcontainer(chunk_data, visual)
 
-        elif chunk_id == fmt_ogf.Chunks.FASTPATH:
+        elif chunk_id == format_ogf.Chunks.FASTPATH:
             read_fastpath(chunk_data, visual)
 
         else:
