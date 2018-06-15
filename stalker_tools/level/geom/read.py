@@ -1,10 +1,10 @@
 
 import time
 
-from . import xray_io
-from . import format_level
-from . import read_level
-from . import types
+from ... import xray_io
+from ... import types
+from .. import format_
+from .. import read
 
 
 def read_slide_windows_indices(data, level):
@@ -50,7 +50,7 @@ def read_vertex_buffers(data, level):
             method = packed_reader.getf('B')[0]             # ?
             usage = packed_reader.getf('B')[0]              # ?
             usage_index = packed_reader.getf('B')[0]        # ?
-            if format_level.types[type] == format_level.UNUSED:
+            if format_.types[type] == format_.UNUSED:
                 break
             else:
                 usage_list.append((usage, type))
@@ -58,37 +58,37 @@ def read_vertex_buffers(data, level):
         for vertex_index in range(vertices_count):
             texcoord = 0
             for usage, type in usage_list:
-                if format_level.usage[usage] == format_level.POSITION:
+                if format_.usage[usage] == format_.POSITION:
                     coord_x, coord_y, coord_z = packed_reader.getf('3f')
                     vertex_buffer.position.append((coord_x, coord_z, coord_y))
-                elif format_level.usage[usage] == format_level.NORMAL:
+                elif format_.usage[usage] == format_.NORMAL:
                     norm_x, norm_y, norm_z, norm_HZ = packed_reader.getf('4B')
-                elif format_level.usage[usage] == format_level.TEXCOORD:
-                    if format_level.types[type] == format_level.FLOAT2:
+                elif format_.usage[usage] == format_.TEXCOORD:
+                    if format_.types[type] == format_.FLOAT2:
                         if texcoord == 0:
                             coord_u, coord_v = packed_reader.getf('2f')
                             vertex_buffer.uv.append((coord_u, 1 - coord_v))
                             texcoord += 1
                         else:
                             lmap_u, lmap_v = packed_reader.getf('2f')
-                    elif format_level.types[type] == format_level.SHORT2:
+                    elif format_.types[type] == format_.SHORT2:
                         if texcoord == 0:
                             coord_u, coord_v = packed_reader.getf('2h')
                             vertex_buffer.uv.append((coord_u / 1024, 1 - coord_v / 1024))
                             texcoord += 1
                         else:
                             lmap_u, lmap_v = packed_reader.getf('2H')
-                    elif format_level.types[type] == format_level.SHORT4:
+                    elif format_.types[type] == format_.SHORT4:
                         coord_u, coord_v = packed_reader.getf('2h')
                         vertex_buffer.uv.append((coord_u / 2048, 1 - coord_v / 2048))
                         lmap_u, lmap_v = packed_reader.getf('2H')
                     else:
                         print('UNKNOWN VERTEX BUFFER TYPE:', type)
-                elif format_level.usage[usage] == format_level.TANGENT:
+                elif format_.usage[usage] == format_.TANGENT:
                     tangents = packed_reader.getf('4B')
-                elif format_level.usage[usage] == format_level.BINORMAL:
+                elif format_.usage[usage] == format_.BINORMAL:
                     binormals = packed_reader.getf('4B')
-                elif format_level.usage[usage] == format_level.COLOR:
+                elif format_.usage[usage] == format_.COLOR:
                     colors = packed_reader.getf('4B')
                 else:
                     print('UNKNOWN VERTEX BUFFER USAGE:', usage)
@@ -99,17 +99,17 @@ def read_main(data):
     level = types.Level()
     chunked_reader = xray_io.ChunkedReader(data)
     for chunk_id, chunk_data in chunked_reader:
-        if chunk_id == format_level.Chunks.Level.HEADER:
-            read_level.read_header(chunk_data)
-        elif chunk_id == format_level.Chunks.Geometry.VB:
+        if chunk_id == format_.Chunks.Level.HEADER:
+            read.read_header(chunk_data)
+        elif chunk_id == format_.Chunks.Geometry.VB:
             st = time.time()
             read_vertex_buffers(chunk_data, level)
             print('Load VB:', time.time() - st)
-        elif chunk_id == format_level.Chunks.Geometry.IB:
+        elif chunk_id == format_.Chunks.Geometry.IB:
             st = time.time()
             read_indices_buffers(chunk_data, level)
             print('Load IB:', time.time() - st)
-        elif chunk_id == format_level.Chunks.Geometry.SWIS:
+        elif chunk_id == format_.Chunks.Geometry.SWIS:
             st = time.time()
             read_slide_windows_indices(chunk_data, level)
             print('Load SWIS:', time.time() - st)
