@@ -14,6 +14,7 @@ class Chunks:
     S_IKDATA = 0x10
     S_USERDATA = 0x11
     DESC = 0x12
+    S_MOTION_REFS_0 = 0x13
     SWICONTAINER = 0x14
     GCONTAINER = 0x15
     FASTPATH = 0x16

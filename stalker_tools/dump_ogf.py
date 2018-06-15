@@ -198,11 +198,18 @@ def read_s_smparams(data):
 
 def read_treedef2(data, visual):
     packed_reader = xray_io.PackedReader(data)
+
     tree_xform = packed_reader.getf('16f')
     read_ogf_color(packed_reader)    # c_scale
     read_ogf_color(packed_reader)    # c_bias
 
     visual.tree_xform = tree_xform
+
+
+def read_s_motion_refs_0(data):
+    packed_reader = xray_io.PackedReader(data)
+
+    motion_refs = packed_reader.gets()
 
 
 def read_desc(data):
@@ -392,6 +399,9 @@ def read_main(data, ogf=False):
 
         elif chunk_id == fmt_ogf.Chunks.DESC:
             read_desc(chunk_data)
+
+        elif chunk_id == fmt_ogf.Chunks.S_MOTION_REFS_0:
+            read_s_motion_refs_0(chunk_data)
 
         elif chunk_id == fmt_ogf.Chunks.SWICONTAINER:
             read_swicontainer(chunk_data, visual)
