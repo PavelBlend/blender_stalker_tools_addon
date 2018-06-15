@@ -21,7 +21,7 @@ class OpImportStalkerLevel(bpy.types.Operator, io_utils.ImportHelper):
 
     def execute(self, context):
         st = time.time()
-        level.read.read_file(self.filepath)
+        level.read.file(self.filepath)
         print('total time: ', time.time() - st)
         return {'FINISHED'}
 
@@ -41,7 +41,7 @@ class OpImportStalkerOGF(bpy.types.Operator, io_utils.ImportHelper):
     def execute(self, context):
         st = time.time()
         for file in self.files:
-            ogf.read.read_file(os.path.join(self.directory, file.name))
+            ogf.read.file(os.path.join(self.directory, file.name))
         print('total time: ', time.time() - st)
         return {'FINISHED'}
 

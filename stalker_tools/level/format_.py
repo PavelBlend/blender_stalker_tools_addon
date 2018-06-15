@@ -27,12 +27,14 @@ D3DCOLOR = 'D3DCOLOR'
 SHORT2 = 'SHORT2'
 SHORT4 = 'SHORT4'
 UNUSED = 'UNUSED'
+
 # vertex buffer method names
 DEFAULT = 'DEFAULT'
 PARTIALU = 'PARTIALU'
 PARTIALV = 'PARTIALV'
 CROSSUV = 'CROSSUV'
 UV = 'UV'
+
 # vertex buffer usage names
 POSITION = 'POSITION'
 BLENDWEIGHT = 'BLENDWEIGHT'
@@ -58,6 +60,7 @@ types = {
     7: SHORT4,
     17: UNUSED
 }
+
 methods = {
     0: DEFAULT,
     1: PARTIALU,
@@ -65,6 +68,7 @@ methods = {
     3: CROSSUV,
     4: UV
 }
+
 usage = {
     0: POSITION,
     1: BLENDWEIGHT,

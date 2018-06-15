@@ -7,7 +7,7 @@ from .. import format_
 from .. import read
 
 
-def read_slide_windows_indices(data, level):
+def slide_windows_indices(data, level):
     packed_reader = xray_io.PackedReader(data)
     swi_buffers_count = packed_reader.getf('I')[0]
     for swi_buffer_index in range(swi_buffers_count):
@@ -28,7 +28,7 @@ def read_slide_windows_indices(data, level):
         level.swis_buffers.append(swis)
 
 
-def read_indices_buffers(data, level):
+def indices_buffers(data, level):
     packed_reader = xray_io.PackedReader(data)
     indices_buffers_count = packed_reader.getf('I')[0]
     for indices_buffer_index in range(indices_buffers_count):
@@ -37,7 +37,7 @@ def read_indices_buffers(data, level):
         level.indices_buffers.append(indices_buffer)
 
 
-def read_vertex_buffers(data, level):
+def vertex_buffers(data, level):
     packed_reader = xray_io.PackedReader(data)
     vertex_buffers_count = packed_reader.getf('I')[0]
     for vertex_buffer_index in range(vertex_buffers_count):
@@ -95,32 +95,39 @@ def read_vertex_buffers(data, level):
         level.vertex_buffers.append(vertex_buffer)
 
 
-def read_main(data):
+def main(data):
     level = types.Level()
     chunked_reader = xray_io.ChunkedReader(data)
+
     for chunk_id, chunk_data in chunked_reader:
+
         if chunk_id == format_.Chunks.Level.HEADER:
-            read.read_header(chunk_data)
+            read.header(chunk_data)
+
         elif chunk_id == format_.Chunks.Geometry.VB:
             st = time.time()
-            read_vertex_buffers(chunk_data, level)
+            vertex_buffers(chunk_data, level)
             print('Load VB:', time.time() - st)
+
         elif chunk_id == format_.Chunks.Geometry.IB:
             st = time.time()
-            read_indices_buffers(chunk_data, level)
+            indices_buffers(chunk_data, level)
             print('Load IB:', time.time() - st)
+
         elif chunk_id == format_.Chunks.Geometry.SWIS:
             st = time.time()
-            read_slide_windows_indices(chunk_data, level)
+            slide_windows_indices(chunk_data, level)
             print('Load SWIS:', time.time() - st)
+
         else:
             print('UNKNOW LEVEL GEOM CHUNK: {0:#x}'.format(chunk_id))
+
     return level
 
 
-def read_file(file_path):
+def file(file_path):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    level = read_main(data)
+    level = main(data)
     return level

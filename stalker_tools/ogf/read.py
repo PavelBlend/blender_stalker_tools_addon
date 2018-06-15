@@ -1,6 +1,5 @@
 
 import bpy
-import bmesh
 
 from .. import xray_io
 from .. import types
@@ -8,34 +7,38 @@ from .. import importer
 from . import format_
 
 
-def read_ogf_color(packed_reader):
+def ogf_color(packed_reader):
     rgb = packed_reader.getf('3f')
     hemi = packed_reader.getf('f')[0]
     sun = packed_reader.getf('f')[0]
 
 
-def read_bsphere(packed_reader):
+def bsphere(packed_reader):
     center = packed_reader.getf('3f')
     radius = packed_reader.getf('f')[0]
 
 
-def read_bbox(packed_reader):
+def bbox(packed_reader):
     bbox_min = packed_reader.getf('3f')
     bbox_max = packed_reader.getf('3f')
 
 
-def read_fastpath(data, visual):
+def fastpath(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
+
     for chunk_id, chunk_data in chunked_reader:
+
         if chunk_id == format_.Chunks.GCONTAINER:
-            read_gcontainer(chunk_data, visual, fast_path=True)
+            gcontainer(chunk_data, visual, fast_path=True)
+
         elif chunk_id == format_.Chunks.SWIDATA:
-            read_swidata(chunk_data, visual, fast_path=True)
+            swidata(chunk_data, visual, fast_path=True)
+
         else:
             print('UNKNOW OGF FASTPATH CHUNK: {0:#x}'.format(chunk_id))
 
 
-def read_gcontainer(data, visual, fast_path=False):
+def gcontainer(data, visual, fast_path=False):
     gcontainer = types.GeometryContainer()
     packed_reader = xray_io.PackedReader(data)
     vb_index = packed_reader.getf('I')[0]
@@ -56,31 +59,31 @@ def read_gcontainer(data, visual, fast_path=False):
         visual.gcontainer = gcontainer
 
 
-def read_swicontainer(data, visual):
+def swicontainer(data, visual):
     packed_reader = xray_io.PackedReader(data)
     swi_index = packed_reader.getf('I')[0]
 
     visual.swi_index = swi_index
 
 
-def read_s_userdata(data):
+def s_userdata(data):
     packed_reader = xray_io.PackedReader(data)
 
     userdata = packed_reader.gets()
 
 
-def read_s_joint_limit(packed_reader):
+def s_joint_limit(packed_reader):
     limit = packed_reader.getf('2f')
     spring_factor = packed_reader.getf('f')[0]
     damping_factor = packed_reader.getf('f')[0]
 
 
-def read_s_joint_ik_data(packed_reader):
+def s_joint_ik_data(packed_reader):
     type = packed_reader.getf('I')[0]
 
-    read_s_joint_limit(packed_reader)
-    read_s_joint_limit(packed_reader)
-    read_s_joint_limit(packed_reader)
+    s_joint_limit(packed_reader)
+    s_joint_limit(packed_reader)
+    s_joint_limit(packed_reader)
 
     spring_factor = packed_reader.getf('f')[0]
     damping_factor = packed_reader.getf('f')[0]
@@ -90,23 +93,24 @@ def read_s_joint_ik_data(packed_reader):
     friction = packed_reader.getf('f')[0]
 
 
-def read_s_bone_shape(packed_reader):
+def s_bone_shape(packed_reader):
     type = packed_reader.getf('H')[0]
     flags = packed_reader.getf('H')[0]
-    read_obb(packed_reader)
-    read_sphere(packed_reader)
-    read_cylinder(packed_reader)
+
+    obb(packed_reader)
+    sphere(packed_reader)
+    cylinder(packed_reader)
 
 
-def read_s_ikdata(data, bones):
+def s_ikdata(data, bones):
     packed_reader = xray_io.PackedReader(data)
 
     for bone in bones:
         version = packed_reader.getf('I')[0]
         game_material = packed_reader.gets()
 
-        read_s_bone_shape(packed_reader)
-        read_s_joint_ik_data(packed_reader)
+        s_bone_shape(packed_reader)
+        s_joint_ik_data(packed_reader)
 
         bind_offset = packed_reader.getf('3f')
         bind_rotate = packed_reader.getf('3f')
@@ -114,25 +118,25 @@ def read_s_ikdata(data, bones):
         center_of_mass = packed_reader.getf('3f')
 
 
-def read_cylinder(packed_reader):
+def cylinder(packed_reader):
     center = packed_reader.getf('3f')
     direction = packed_reader.getf('3f')
     height = packed_reader.getf('f')[0]
     radius = packed_reader.getf('f')[0]
 
 
-def read_sphere(packed_reader):
+def sphere(packed_reader):
     position = packed_reader.getf('3f')
     radius = packed_reader.getf('f')[0]
 
 
-def read_obb(packed_reader):
+def obb(packed_reader):
     rotate = packed_reader.getf('9f')
     translate = packed_reader.getf('3f')
     halfsize = packed_reader.getf('3f')
 
 
-def read_s_bone_names(data):
+def s_bone_names(data):
     packed_reader = xray_io.PackedReader(data)
 
     bones = []
@@ -141,18 +145,19 @@ def read_s_bone_names(data):
     for bone_index in range(bones_count):
         bone_name = packed_reader.gets()
         bone_parent = packed_reader.gets()
-        read_obb(packed_reader)
+
+        obb(packed_reader)
 
         bones.append(bone_name)
 
     return bones
 
 
-def read_motion_mark(packed_reader):
+def motion_mark(packed_reader):
     pass
 
 
-def read_motion_def(packed_reader):
+def motion_def(packed_reader):
 	bone_or_part = packed_reader.getf('H')[0]
 	motion = packed_reader.getf('H')[0]
 	speed = packed_reader.getf('f')[0]
@@ -161,7 +166,7 @@ def read_motion_def(packed_reader):
 	falloff = packed_reader.getf('f')[0]
 
 
-def read_s_smparams(data):
+def s_smparams(data):
     packed_reader = xray_io.PackedReader(data)
 
     params_version = packed_reader.getf('H')[0]
@@ -188,31 +193,31 @@ def read_s_smparams(data):
         motion_name = packed_reader.gets()
         motion_flags = packed_reader.getf('I')[0]
 
-        read_motion_def(packed_reader)
+        motion_def(packed_reader)
 
         if params_version == 4:
             num_marks = packed_reader.getf('I')[0]
             for mark_index in range(num_marks):
-                read_motion_mark(packed_reader)
+                motion_mark(packed_reader)
 
 
-def read_treedef2(data, visual):
+def treedef2(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     tree_xform = packed_reader.getf('16f')
-    read_ogf_color(packed_reader)    # c_scale
-    read_ogf_color(packed_reader)    # c_bias
+    ogf_color(packed_reader)    # c_scale
+    ogf_color(packed_reader)    # c_bias
 
     visual.tree_xform = tree_xform
 
 
-def read_s_motion_refs_0(data):
+def s_motion_refs_0(data):
     packed_reader = xray_io.PackedReader(data)
 
     motion_refs = packed_reader.gets()
 
 
-def read_desc(data):
+def desc(data):
     packed_reader = xray_io.PackedReader(data)
 
     source = packed_reader.gets()
@@ -227,7 +232,7 @@ def read_desc(data):
     modified_time = packed_reader.getf('I')[0]
 
 
-def read_loddef2(data):
+def loddef2(data):
     packed_reader = xray_io.PackedReader(data)
     for i in range(8):
         for j in range(4):
@@ -238,20 +243,20 @@ def read_loddef2(data):
             pad = packed_reader.getf('3B')
 
 
-def read_children_l(data):
+def children_l(data):
     packed_reader = xray_io.PackedReader(data)
     children_count = packed_reader.getf('I')[0]
     for children_index in range(children_count):
         children = packed_reader.getf('I')[0]
 
 
-def read_children(data):
+def children(data):
     chunked_reader = xray_io.ChunkedReader(data)
     for child_id, child_data in chunked_reader:
-        read_main(child_data, ogf=True)
+        main(child_data, ogf=True)
 
 
-def read_swidata(data, visual, fast_path=False):
+def swidata(data, visual, fast_path=False):
     packed_reader = xray_io.PackedReader(data)
     swis = []
     reserved = packed_reader.getf('4I')
@@ -271,7 +276,7 @@ def read_swidata(data, visual, fast_path=False):
         visual.swidata = swis
 
 
-def read_indices(data, visual):
+def indices(data, visual):
     packed_reader = xray_io.PackedReader(data)
     indices_count = packed_reader.getf('I')[0]
     for index in range(indices_count):
@@ -279,7 +284,7 @@ def read_indices(data, visual):
         visual.indices.append(vertex_index)
 
 
-def read_vertices(data, visual):
+def vertices(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     vertex_format = packed_reader.getf('I')[0]
@@ -327,14 +332,14 @@ def read_vertices(data, visual):
         raise BaseException('Unknown vertex format: 0x{:x}'.format(vertex_format))
 
 
-def read_texture(data, visual):
+def texture(data, visual):
     packed_reader = xray_io.PackedReader(data)
     texture = packed_reader.gets()
     shader = packed_reader.gets()
     visual.texture = texture
 
 
-def read_header(data, visual):
+def header(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     ogf_version = packed_reader.getf('B')[0]
@@ -344,14 +349,14 @@ def read_header(data, visual):
     model_type = packed_reader.getf('B')[0]
     shader_id = packed_reader.getf('H')[0]
     if ogf_version == 4:
-        read_bbox(packed_reader)
-        read_bsphere(packed_reader)
+        bbox(packed_reader)
+        bsphere(packed_reader)
 
     visual.type = format_.model_types[model_type]
     visual.shader_id = shader_id
 
 
-def read_main(data, ogf=False):
+def main(data, ogf=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
 
@@ -359,58 +364,58 @@ def read_main(data, ogf=False):
         visual.chunks.append(hex(chunk_id))
 
         if chunk_id == format_.Chunks.HEADER:
-            read_header(chunk_data, visual)
+            header(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.TEXTURE:
-            read_texture(chunk_data, visual)
+            texture(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.VERTICES:
-            read_vertices(chunk_data, visual)
+            vertices(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.INDICES:
-            read_indices(chunk_data, visual)
+            indices(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.SWIDATA:
-            read_swidata(chunk_data, visual)
+            swidata(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN:
-            read_children(chunk_data)
+            children(chunk_data)
 
         elif chunk_id == format_.Chunks.CHILDREN_L:
-            read_children_l(chunk_data)
+            children_l(chunk_data)
 
         elif chunk_id == format_.Chunks.LODDEF2:
-            read_loddef2(chunk_data)
+            loddef2(chunk_data)
 
         elif chunk_id == format_.Chunks.TREEDEF2:
-            read_treedef2(chunk_data, visual)
+            treedef2(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.S_BONE_NAMES:
-            bones = read_s_bone_names(chunk_data)
+            bones = s_bone_names(chunk_data)
 
         elif chunk_id == format_.Chunks.S_SMPARAMS:
-            read_s_smparams(chunk_data)
+            s_smparams(chunk_data)
 
         elif chunk_id == format_.Chunks.S_IKDATA:
-            read_s_ikdata(chunk_data, bones)
+            s_ikdata(chunk_data, bones)
 
         elif chunk_id == format_.Chunks.S_USERDATA:
-            read_s_userdata(chunk_data)
+            s_userdata(chunk_data)
 
         elif chunk_id == format_.Chunks.DESC:
-            read_desc(chunk_data)
+            desc(chunk_data)
 
         elif chunk_id == format_.Chunks.S_MOTION_REFS_0:
-            read_s_motion_refs_0(chunk_data)
+            s_motion_refs_0(chunk_data)
 
         elif chunk_id == format_.Chunks.SWICONTAINER:
-            read_swicontainer(chunk_data, visual)
+            swicontainer(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.GCONTAINER:
-            read_gcontainer(chunk_data, visual)
+            gcontainer(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.FASTPATH:
-            read_fastpath(chunk_data, visual)
+            fastpath(chunk_data, visual)
 
         else:
             print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
@@ -421,8 +426,8 @@ def read_main(data, ogf=False):
     return visual
 
 
-def read_file(file_path):
+def file(file_path):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    read_main(data, ogf=True)
+    main(data, ogf=True)
