@@ -63,6 +63,12 @@ def read_swicontainer(data, visual):
     visual.swi_index = swi_index
 
 
+def read_s_userdata(data):
+    packed_reader = xray_io.PackedReader(data)
+
+    userdata = packed_reader.gets()
+
+
 def read_s_joint_limit(packed_reader):
     limit = packed_reader.getf('2f')
     spring_factor = packed_reader.getf('f')[0]
@@ -380,6 +386,9 @@ def read_main(data, ogf=False):
 
         elif chunk_id == fmt_ogf.Chunks.S_IKDATA:
             read_s_ikdata(chunk_data, bones)
+
+        elif chunk_id == fmt_ogf.Chunks.S_USERDATA:
+            read_s_userdata(chunk_data)
 
         elif chunk_id == fmt_ogf.Chunks.DESC:
             read_desc(chunk_data)

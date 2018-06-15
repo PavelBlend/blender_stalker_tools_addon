@@ -12,6 +12,7 @@ class Chunks:
     S_BONE_NAMES = 0xd
     S_SMPARAMS = 0xf
     S_IKDATA = 0x10
+    S_USERDATA = 0x11
     DESC = 0x12
     SWICONTAINER = 0x14
     GCONTAINER = 0x15
