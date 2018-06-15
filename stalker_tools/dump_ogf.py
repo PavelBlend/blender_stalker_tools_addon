@@ -26,7 +26,6 @@ def read_bbox(packed_reader):
 
 def read_fastpath(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
-    swidata = None
     for chunk_id, chunk_data in chunked_reader:
         if chunk_id == fmt_ogf.Chunks.GCONTAINER:
             read_gcontainer(chunk_data, visual, fast_path=True)
@@ -141,6 +140,54 @@ def read_s_bone_names(data):
         bones.append(bone_name)
 
     return bones
+
+
+def read_motion_mark(packed_reader):
+    pass
+
+
+def read_motion_def(packed_reader):
+	bone_or_part = packed_reader.getf('H')[0]
+	motion = packed_reader.getf('H')[0]
+	speed = packed_reader.getf('f')[0]
+	power = packed_reader.getf('f')[0]
+	accrue = packed_reader.getf('f')[0]
+	falloff = packed_reader.getf('f')[0]
+
+
+def read_s_smparams(data):
+    packed_reader = xray_io.PackedReader(data)
+
+    params_version = packed_reader.getf('H')[0]
+    partition_count = packed_reader.getf('H')[0]
+
+    for partition_index in range(partition_count):
+        partition_name = packed_reader.gets()
+        bone_count = packed_reader.getf('H')[0]
+
+        for bone in range(bone_count):
+            if params_version == 1:
+                bone_id = packed_reader.getf('I')[0]
+            elif params_version == 2:
+                bone_name = packed_reader.gets()
+            elif params_version == 3 or params_version == 4:
+                bone_id = packed_reader.getf('I')[0]
+                bone_name = packed_reader.gets()
+            else:
+                raise BaseException('Unknown params version')
+
+    motion_count = packed_reader.getf('H')[0]
+
+    for motion_index in range(motion_count):
+        motion_name = packed_reader.gets()
+        motion_flags = packed_reader.getf('I')[0]
+
+        read_motion_def(packed_reader)
+
+        if params_version == 4:
+            num_marks = packed_reader.getf('I')[0]
+            for mark_index in range(num_marks):
+                read_motion_mark(packed_reader)
 
 
 def read_treedef2(data, visual):
@@ -327,6 +374,9 @@ def read_main(data, ogf=False):
 
         elif chunk_id == fmt_ogf.Chunks.S_BONE_NAMES:
             bones = read_s_bone_names(chunk_data)
+
+        elif chunk_id == fmt_ogf.Chunks.S_SMPARAMS:
+            read_s_smparams(chunk_data)
 
         elif chunk_id == fmt_ogf.Chunks.S_IKDATA:
             read_s_ikdata(chunk_data, bones)
