@@ -182,8 +182,8 @@ def s_smparams(data):
             elif params_version == 2:
                 bone_name = packed_reader.gets()
             elif params_version == 3 or params_version == 4:
-                bone_id = packed_reader.getf('I')[0]
                 bone_name = packed_reader.gets()
+                bone_id = packed_reader.getf('I')[0]
             else:
                 raise BaseException('Unknown params version')
 
