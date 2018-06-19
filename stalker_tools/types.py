@@ -43,4 +43,5 @@ class Visual:
         self.vertices = []
         self.uvs = []
         self.indices = []
+        self.normals = []
         self.texture = None

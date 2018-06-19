@@ -8,29 +8,70 @@ def import_visual(visual):
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
         bpy_mesh = bpy.data.meshes.new(visual.type)
-        for vertex in visual.vertices:
-            b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
-        b_mesh.verts.ensure_lookup_table()
 
         if visual.swidata:
             visual.indices = visual.indices[visual.swidata[0].offset : ]
 
-        for i in range(0, len(visual.indices), 3):
-            v1 = b_mesh.verts[visual.indices[i]]
-            v2 = b_mesh.verts[visual.indices[i + 2]]
-            v3 = b_mesh.verts[visual.indices[i + 1]]
+        # remesh
+        triangles = []
+        for index in range(0, len(visual.indices), 3):
+            triangle = (
+                visual.indices[index],
+                visual.indices[index + 2],
+                visual.indices[index + 1]
+            )
+            triangles.append(triangle)
+
+        import_vertices = {}
+        remap_indices = {}
+        uvs = []
+        remap_vertex_index = 0
+        for triangle_index, triangle in enumerate(triangles):
+            for vertex_index in triangle:
+                vertex = visual.vertices[vertex_index]
+                uvs.append(visual.uvs[vertex_index])
+                if import_vertices.get(vertex) != None:
+                    remap_indices[vertex_index] = import_vertices[vertex]
+                else:
+                    import_vertices[vertex] = remap_vertex_index
+                    remap_indices[vertex_index] = remap_vertex_index
+                    remap_vertex_index += 1
+
+        # generate vertices
+        for vertex_index in range(len(import_vertices)):
+            b_mesh.verts.new((0, 0, 0))
+        b_mesh.verts.ensure_lookup_table()
+
+        # assign vertices coordinates
+        for vert_coord, vert_index in import_vertices.items():
+            b_mesh.verts[vert_index].co = vert_coord[0], vert_coord[1], vert_coord[2]
+
+        # generate triangles
+        bm_faces = []
+        for triangle in triangles:
+            v1 = b_mesh.verts[remap_indices[triangle[0]]]
+            v2 = b_mesh.verts[remap_indices[triangle[1]]]
+            v3 = b_mesh.verts[remap_indices[triangle[2]]]
             try:
                 face = b_mesh.faces.new((v1, v2, v3))
                 face.smooth = True
+                bm_faces.append(face)
             except ValueError:
-                pass
+                bm_faces.append(None)
+
         b_mesh.faces.ensure_lookup_table()
         b_mesh.normal_update()
 
+        # import uvs
         uv_layer = b_mesh.loops.layers.uv.new('Texture')
-        for face in b_mesh.faces:
-            for loop in face.loops:
-                loop[uv_layer].uv = visual.uvs[loop.vert.index]
+        uv_index = 0
+        for face in bm_faces:
+            if face:
+                for loop in face.loops:
+                    loop[uv_layer].uv = uvs[uv_index]
+                    uv_index += 1
+            else:
+                uv_index += 3    # skip 3 face loops
 
         abs_image_path = 'D:\\stalker\\xray_sdk_yurshat_repack\\editors\\gamedata\\textures\\' + visual.texture + '.dds'
         bpy_mat = bpy.data.materials.new(visual.texture)

@@ -299,6 +299,7 @@ def vertices(data, visual):
 
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+            visual.normals.append((normal_x, normal_z, normal_y))
 
     elif vertex_format == format_.OGF4_VERTEXFORMAT_FVF_1L:
         for vertex_index in range(vertices_count):
@@ -312,6 +313,7 @@ def vertices(data, visual):
 
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+            visual.normals.append((normal_x, normal_z, normal_y))
 
     elif vertex_format == format_.OGF4_VERTEXFORMAT_FVF_2L:
         for vertex_index in range(vertices_count):
@@ -327,6 +329,7 @@ def vertices(data, visual):
 
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
+            visual.normals.append((normal_x, normal_z, normal_y))
 
     else:
         raise BaseException('Unknown vertex format: 0x{:x}'.format(vertex_format))
