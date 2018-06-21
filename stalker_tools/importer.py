@@ -12,7 +12,7 @@ def import_visual(visual):
         if visual.swidata:
             visual.indices = visual.indices[visual.swidata[0].offset : ]
 
-        # remesh
+        # generate triangles
         triangles = []
         for index in range(0, len(visual.indices), 3):
             triangle = (
@@ -22,22 +22,32 @@ def import_visual(visual):
             )
             triangles.append(triangle)
 
+        # remesh
         import_vertices = {}
         remap_indices = {}
+        normals = {}
         uvs = []
         remap_vertex_index = 0
+
         for triangle_index, triangle in enumerate(triangles):
             for vertex_index in triangle:
-                vertex = visual.vertices[vertex_index]
+                vertex_coord = visual.vertices[vertex_index]
+                normal = visual.normals[vertex_index]
                 uvs.append(visual.uvs[vertex_index])
-                if import_vertices.get(vertex) != None:
-                    remap_indices[vertex_index] = import_vertices[vertex]
+                if import_vertices.get(vertex_coord) != None:
+                    remap_indices[vertex_index] = import_vertices[vertex_coord]
+
+                    normals[import_vertices[vertex_coord]].append(normal)
+
                 else:
-                    import_vertices[vertex] = remap_vertex_index
+                    import_vertices[vertex_coord] = remap_vertex_index
                     remap_indices[vertex_index] = remap_vertex_index
+
+                    normals[remap_vertex_index] = [normal, ]
+
                     remap_vertex_index += 1
 
-        # generate vertices
+        # create vertices
         for vertex_index in range(len(import_vertices)):
             b_mesh.verts.new((0, 0, 0))
         b_mesh.verts.ensure_lookup_table()
@@ -46,7 +56,7 @@ def import_visual(visual):
         for vert_coord, vert_index in import_vertices.items():
             b_mesh.verts[vert_index].co = vert_coord[0], vert_coord[1], vert_coord[2]
 
-        # generate triangles
+        # create triangles
         bm_faces = []
         for triangle in triangles:
             v1 = b_mesh.verts[remap_indices[triangle[0]]]
@@ -61,6 +71,23 @@ def import_visual(visual):
 
         b_mesh.faces.ensure_lookup_table()
         b_mesh.normal_update()
+
+        # generate sharp edges
+        sharp_vertices = []
+        for face in b_mesh.faces:
+            for loop in face.loops:
+                vert = loop.vert
+                edge = loop.edge
+                vert_normals = normals.get(vert.index)
+                unique_normals = set()
+                for vert_normal in vert_normals:
+                    unique_normals.add(vert_normal)
+                if len(unique_normals) > 1:
+                    sharp_vertices.append(vert.index)
+
+        for edge in b_mesh.edges:
+            if edge.verts[0].index in sharp_vertices and edge.verts[1].index in sharp_vertices:
+                edge.smooth = False
 
         # import uvs
         uv_layer = b_mesh.loops.layers.uv.new('Texture')
