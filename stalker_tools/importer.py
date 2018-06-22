@@ -1,4 +1,6 @@
 
+import math
+
 import bpy
 import bmesh
 import mathutils
@@ -21,6 +23,25 @@ def import_visual(visual):
                 visual.indices[index + 1]
             )
             triangles.append(triangle)
+
+        # find non-manifold edges
+        loops_faces = {}
+        for tris_index, tris in enumerate(triangles):
+            loop_0 = [tris[0], tris[1]]
+            loop_1 = [tris[1], tris[2]]
+            loop_2 = [tris[2], tris[0]]
+            for loop in (loop_0, loop_1, loop_2):
+                loop.sort()
+                loop = tuple(loop)
+                if loops_faces.get(loop):
+                    loops_faces[loop].append(tris_index)
+                else:
+                    loops_faces[loop] = [tris_index, ]
+
+        non_manifold_edges = set()
+        for loop, tris in loops_faces.items():
+            if len(tris) == 1:
+                non_manifold_edges.add(loop)
 
         # remesh
         import_vertices = {}
@@ -46,6 +67,16 @@ def import_visual(visual):
                     normals[remap_vertex_index] = [normal, ]
 
                     remap_vertex_index += 1
+
+        # remap non-manifold edges
+        remap_non_manifold_edges = set()
+        for non_manifold_edge in non_manifold_edges:
+            vert_0 = remap_indices[non_manifold_edge[0]]
+            vert_1 = remap_indices[non_manifold_edge[1]]
+            verts = [vert_0, vert_1]
+            verts.sort()
+            verts = tuple(verts)
+            remap_non_manifold_edges.add(verts)
 
         # create vertices
         for vertex_index in range(len(import_vertices)):
@@ -87,7 +118,11 @@ def import_visual(visual):
 
         for edge in b_mesh.edges:
             if edge.verts[0].index in sharp_vertices and edge.verts[1].index in sharp_vertices:
-                edge.smooth = False
+                edge_verts = [edge.verts[0].index, edge.verts[1].index]
+                edge_verts.sort()
+                edge_verts = tuple(edge_verts)
+                if edge_verts in remap_non_manifold_edges:
+                    edge.smooth = False
 
         # import uvs
         uv_layer = b_mesh.loops.layers.uv.new('Texture')
@@ -120,6 +155,9 @@ def import_visual(visual):
 
         bpy_tex.image = bpy_image
         bpy_mesh.materials.append(bpy_mat)
+        bpy_mesh.use_auto_smooth = True
+        bpy_mesh.auto_smooth_angle = math.pi
+        bpy_mesh.show_edge_sharp = True
 
         b_mesh.to_mesh(bpy_mesh)
         bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
