@@ -26,17 +26,38 @@ def import_visual(visual):
 
         # find non-manifold edges
         loops_faces = {}
+        load_vertices = {}
         for tris_index, tris in enumerate(triangles):
             loop_0 = [tris[0], tris[1]]
             loop_1 = [tris[1], tris[2]]
             loop_2 = [tris[2], tris[0]]
             for loop in (loop_0, loop_1, loop_2):
+                vert_0 = visual.vertices[loop[0]]
+                vert_1 = visual.vertices[loop[1]]
+                norm_0 = visual.normals[loop[0]]
+                norm_1 = visual.normals[loop[1]]
                 loop.sort()
                 loop = tuple(loop)
                 if loops_faces.get(loop):
                     loops_faces[loop].append(tris_index)
                 else:
                     loops_faces[loop] = [tris_index, ]
+
+                if load_vertices.get(vert_0):
+                    if norm_0 in load_vertices[vert_0] and len(load_vertices[vert_0]) == 1:
+                        loops_faces[loop].append(tris_index)
+                    load_vertices[vert_0].add(norm_0)
+
+                else:
+                    load_vertices[vert_0] = set([norm_0, ])
+
+                if load_vertices.get(vert_1):
+                    if norm_1 in load_vertices[vert_1] and len(load_vertices[vert_1]) == 1:
+                        loops_faces[loop].append(tris_index)
+                    load_vertices[vert_1].add(norm_1)
+
+                else:
+                    load_vertices[vert_1] = set([norm_1, ])
 
         non_manifold_edges = set()
         for loop, tris in loops_faces.items():
@@ -122,7 +143,8 @@ def import_visual(visual):
                 edge_verts.sort()
                 edge_verts = tuple(edge_verts)
                 if edge_verts in remap_non_manifold_edges:
-                    edge.smooth = False
+                    if len(edge.link_faces) != 1:
+                        edge.smooth = False
 
         # import uvs
         uv_layer = b_mesh.loops.layers.uv.new('Texture')
