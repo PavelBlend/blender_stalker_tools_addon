@@ -1,5 +1,6 @@
 
 import math
+import os
 
 import bpy
 import bmesh
@@ -176,7 +177,8 @@ def import_visual(visual):
             else:
                 uv_index += 3    # skip 3 face loops
 
-        abs_image_path = 'D:\\stalker\\xray_sdk_yurshat_repack\\editors\\gamedata\\textures\\' + visual.texture + '.dds'
+        textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
+        abs_image_path = textures_folder + os.sep + visual.texture + '.dds'
         bpy_mat = bpy.data.materials.new(visual.texture)
         bpy_mat.use_shadeless = True
         bpy_mat.use_transparency = True
@@ -206,6 +208,31 @@ def import_visual(visual):
 
 
 def import_visuals(level):
+    bpy_materials = []
+    bpy_materials.append(None)    # first empty shader
+    for texture in level.materials:
+        textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
+        abs_image_path = textures_folder + os.sep + texture + '.dds'
+        bpy_mat = bpy.data.materials.new(texture)
+        bpy_mat.use_shadeless = True
+        bpy_mat.use_transparency = True
+        bpy_mat.alpha = 0.0
+        bpy_tex = bpy.data.textures.new(texture, type='IMAGE')
+        bpy_tex.type = 'IMAGE'
+        bpy_texture_slot = bpy_mat.texture_slots.add()
+        bpy_texture_slot.texture = bpy_tex
+        bpy_texture_slot.use_map_alpha = True
+
+        try:
+            bpy_image = bpy.data.images.load(abs_image_path)
+        except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
+            bpy_image = bpy.data.images.new(texture, 0, 0)
+            bpy_image.source = 'FILE'
+            bpy_image.filepath = abs_image_path
+
+        bpy_tex.image = bpy_image
+        bpy_materials.append(bpy_mat)
+
     loaded_visuals = {}
     for visual in level.visuals:
         if visual.gcontainer:
@@ -221,7 +248,7 @@ def import_visuals(level):
             if not bpy_mesh_name:
                 b_mesh = bmesh.new()
                 bpy_mesh = bpy.data.meshes.new(visual.type)
-                bpy_mesh.materials.append(level.materials[visual.shader_id])
+                bpy_mesh.materials.append(bpy_materials[visual.shader_id])
 
                 vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
                 vertices = vertex_buffer.position[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]

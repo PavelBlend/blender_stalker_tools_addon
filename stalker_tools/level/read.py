@@ -90,7 +90,6 @@ def shaders(data, level):
     packed_reader = xray_io.PackedReader(data)
     shaders_count = packed_reader.getf('I')[0]
     empty_shader = packed_reader.gets()
-    level.materials.append(bpy.data.materials.new('material'))
     for shader_index in range(shaders_count - 1):
         shader = packed_reader.gets()
         engine_shader, textures = shader.split('/')
@@ -104,26 +103,7 @@ def shaders(data, level):
         else:
             raise Exception('Shader has to many lmaps!')
 
-        abs_image_path = 'D:\\stalker\\xray_sdk_yurshat_repack\\editors\\gamedata\\textures\\' + texture + '.dds'
-        bpy_mat = bpy.data.materials.new(texture)
-        bpy_mat.use_shadeless = True
-        bpy_mat.use_transparency = True
-        bpy_mat.alpha = 0.0
-        bpy_tex = bpy.data.textures.new(texture, type='IMAGE')
-        bpy_tex.type = 'IMAGE'
-        bpy_texture_slot = bpy_mat.texture_slots.add()
-        bpy_texture_slot.texture = bpy_tex
-        bpy_texture_slot.use_map_alpha = True
-
-        try:
-            bpy_image = bpy.data.images.load(abs_image_path)
-        except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
-            bpy_image = bpy.data.images.new(texture, 0, 0)
-            bpy_image.source = 'FILE'
-            bpy_image.filepath = abs_image_path
-
-        bpy_tex.image = bpy_image
-        level.materials.append(bpy_mat)
+        level.materials.append(texture)
 
 
 def header(data):

@@ -20,6 +20,10 @@ class OpImportStalkerLevel(bpy.types.Operator, io_utils.ImportHelper):
     filter_glob = bpy.props.StringProperty(default='level', options={'HIDDEN'})
 
     def execute(self, context):
+        io_scene_xray_addon = bpy.context.user_preferences.addons.get('io_scene_xray')
+        if not io_scene_xray_addon:
+            self.report({'WARNING'}, 'Cannot find "io_scene_xray" addon')
+            return {'FINISHED'}
         st = time.time()
         level.read.file(self.filepath)
         print('total time: ', time.time() - st)
@@ -39,6 +43,10 @@ class OpImportStalkerOGF(bpy.types.Operator, io_utils.ImportHelper):
     filter_glob = bpy.props.StringProperty(default='*.ogf', options={'HIDDEN'})
 
     def execute(self, context):
+        io_scene_xray_addon = bpy.context.user_preferences.addons.get('io_scene_xray')
+        if not io_scene_xray_addon:
+            self.report({'WARNING'}, 'Cannot find "io_scene_xray" addon')
+            return {'FINISHED'}
         st = time.time()
         for file in self.files:
             ogf.read.file(os.path.join(self.directory, file.name))
