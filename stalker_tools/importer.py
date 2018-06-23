@@ -24,40 +24,59 @@ def import_visual(visual):
             )
             triangles.append(triangle)
 
+        # merge ident verts
+        load_vertices = {}
+        new_triangles = []
+        for tris_index, tris in enumerate(triangles):
+            vert_0 = visual.vertices[tris[0]]
+            vert_1 = visual.vertices[tris[1]]
+            vert_2 = visual.vertices[tris[2]]
+            norm_0 = visual.normals[tris[0]]
+            norm_1 = visual.normals[tris[1]]
+            norm_2 = visual.normals[tris[2]]
+            verts = (vert_0, norm_0), (vert_1, norm_1), (vert_2, norm_2)
+            new_face = [tris[0], tris[1], tris[2]]
+            for vert_index, vert in enumerate(verts):
+                if load_vertices.get(vert):
+                    new_face[vert_index] = load_vertices[vert]
+                else:
+                    load_vertices[vert] = tris[vert_index]
+            new_triangles.append(new_face)
+
         # find non-manifold edges
         loops_faces = {}
         load_vertices = {}
-        for tris_index, tris in enumerate(triangles):
+        load_vertices_indices = {}
+        for tris_index, tris in enumerate(new_triangles):
             loop_0 = [tris[0], tris[1]]
             loop_1 = [tris[1], tris[2]]
             loop_2 = [tris[2], tris[0]]
             for loop in (loop_0, loop_1, loop_2):
-                vert_0 = visual.vertices[loop[0]]
-                vert_1 = visual.vertices[loop[1]]
+                vert_0 = loop[0]
+                vert_1 = loop[1]
                 norm_0 = visual.normals[loop[0]]
                 norm_1 = visual.normals[loop[1]]
                 loop.sort()
                 loop = tuple(loop)
+
                 if loops_faces.get(loop):
                     loops_faces[loop].append(tris_index)
                 else:
                     loops_faces[loop] = [tris_index, ]
 
-                if load_vertices.get(vert_0):
-                    if norm_0 in load_vertices[vert_0] and len(load_vertices[vert_0]) == 1:
-                        loops_faces[loop].append(tris_index)
-                    load_vertices[vert_0].add(norm_0)
+                for vert, norm in ((vert_0, norm_0), (vert_1, norm_1)):
+                    vert_coord = visual.vertices[vert]
+                    if load_vertices.get(vert_coord):
+                        if {norm} == set(load_vertices[vert_coord]):
+                            loops_faces[loop].append(tris_index)
+                        else:
+                            pass
 
-                else:
-                    load_vertices[vert_0] = set([norm_0, ])
-
-                if load_vertices.get(vert_1):
-                    if norm_1 in load_vertices[vert_1] and len(load_vertices[vert_1]) == 1:
-                        loops_faces[loop].append(tris_index)
-                    load_vertices[vert_1].add(norm_1)
-
-                else:
-                    load_vertices[vert_1] = set([norm_1, ])
+                        load_vertices[vert_coord].append(norm)
+                        load_vertices_indices[vert_coord].append(vert)
+                    else:
+                        load_vertices[vert_coord] = [norm, ]
+                        load_vertices_indices[vert_coord] = [vert, ]
 
         non_manifold_edges = set()
         for loop, tris in loops_faces.items():
