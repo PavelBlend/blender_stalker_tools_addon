@@ -45,4 +45,5 @@ class Visual:
         self.indices = []
         self.normals = []
         self.texture = None
+        self.shader = None
         self.root_object = None

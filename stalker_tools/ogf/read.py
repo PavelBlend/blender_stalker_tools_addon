@@ -339,7 +339,9 @@ def texture(data, visual):
     packed_reader = xray_io.PackedReader(data)
     texture = packed_reader.gets()
     shader = packed_reader.gets()
+
     visual.texture = texture
+    visual.shader = shader
 
 
 def header(data, visual):

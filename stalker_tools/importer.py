@@ -203,6 +203,9 @@ def import_visual(visual, root_object):
             bpy_image.filepath = abs_image_path
 
         bpy_tex.image = bpy_image
+        bpy_mat.xray.eshader = visual.shader
+        bpy_mat.xray.cshader = 'default'
+        bpy_mat.xray.gamemtl = 'default'
         bpy_mesh.materials.append(bpy_mat)
         bpy_mesh.use_auto_smooth = True
         bpy_mesh.auto_smooth_angle = math.pi
