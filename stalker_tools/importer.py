@@ -7,7 +7,13 @@ import bmesh
 import mathutils
 
 
-def import_visual(visual):
+def import_root_object(visual):
+    root_object = bpy.data.objects.new(visual.root_object, None)
+    bpy.context.scene.objects.link(root_object)
+    visual.root_object = root_object.name
+
+
+def import_visual(visual, root_object):
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
         bpy_mesh = bpy.data.meshes.new(visual.type)
@@ -204,6 +210,8 @@ def import_visual(visual):
 
         b_mesh.to_mesh(bpy_mesh)
         bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
+        if root_object:
+            bpy_object.parent = bpy.data.objects[root_object]
         bpy.context.scene.objects.link(bpy_object)
 
 

@@ -1,5 +1,5 @@
 
-import bpy
+import os
 
 from .. import xray_io
 from .. import types
@@ -250,10 +250,10 @@ def children_l(data):
         children = packed_reader.getf('I')[0]
 
 
-def children(data):
+def children(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
     for child_id, child_data in chunked_reader:
-        main(child_data, ogf=True)
+        main(child_data, ogf=True, file=None, root=visual.root_object)
 
 
 def swidata(data, visual, fast_path=False):
@@ -359,9 +359,12 @@ def header(data, visual):
     visual.shader_id = shader_id
 
 
-def main(data, ogf=False):
+def main(data, ogf=False, file=None, root=None):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
+    if file:
+        visual.root_object = os.path.splitext(os.path.basename(file))[0]
+        importer.import_root_object(visual)
 
     for chunk_id, chunk_data in chunked_reader:
         visual.chunks.append(hex(chunk_id))
@@ -382,7 +385,7 @@ def main(data, ogf=False):
             swidata(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN:
-            children(chunk_data)
+            children(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN_L:
             children_l(chunk_data)
@@ -424,7 +427,7 @@ def main(data, ogf=False):
             print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
 
     if ogf:
-        importer.import_visual(visual)
+        importer.import_visual(visual, root)
 
     return visual
 
@@ -433,4 +436,4 @@ def file(file_path):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    main(data, ogf=True)
+    main(data, ogf=True, file=file_path)
