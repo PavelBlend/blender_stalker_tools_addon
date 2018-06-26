@@ -7,13 +7,54 @@ import bmesh
 import mathutils
 
 
-def import_root_object(visual):
-    root_object = bpy.data.objects.new(visual.root_object, None)
+MATRIX_BONE = mathutils.Matrix((
+    (1.0, 0.0, 0.0, 0.0),
+    (0.0, 0.0, -1.0, 0.0),
+    (0.0, 1.0, 0.0, 0.0),
+    (0.0, 0.0, 0.0, 1.0)
+)).freeze()
+MATRIX_BONE_INVERTED = MATRIX_BONE.inverted().freeze()
+
+
+def import_root_object(root_object_name):
+    root_object = bpy.data.objects.new(root_object_name, None)
     bpy.context.scene.objects.link(root_object)
-    visual.root_object = root_object.name
+    return root_object
+
+
+def import_bones(visual, root_object):
+    bpy_armature = bpy.data.armatures.new('armature')
+    bpy_armature.draw_type = 'STICK'
+    bpy_obj = bpy.data.objects.new('armature', bpy_armature)
+    bpy_obj.show_x_ray = True
+    bpy_obj.parent = root_object
+    bpy.context.scene.objects.link(bpy_obj)
+    bpy.context.scene.objects.active = bpy_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    matrices = {}
+
+    for bone in visual.bones:
+        bpy_bone = bpy_armature.edit_bones.new(bone.name)
+        parent_matrix = matrices.get(bone.parent, mathutils.Matrix.Identity(4)) * MATRIX_BONE_INVERTED
+        if bone.parent:
+            bone_matrix = parent_matrix * mathutils.Matrix.Translation(bone.offset) * mathutils.Euler(bone.rotate, 'YXZ').to_matrix().to_4x4() * MATRIX_BONE
+            bpy_bone.parent = bpy_armature.edit_bones[bone.parent]
+        else:
+            bone_matrix = mathutils.Matrix.Translation(bone.offset) * mathutils.Euler(bone.rotate, 'YXZ').to_matrix().to_4x4() * MATRIX_BONE
+        matrices[bone.name] = bone_matrix
+        bpy_bone.tail.y = 0.02
+        bpy_bone.matrix = bone_matrix
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for bone in bpy_obj.pose.bones:
+        bone.rotation_mode = 'ZXY'
 
 
 def import_visual(visual, root_object):
+
+    if len(visual.bones):
+        import_bones(visual, root_object)
+
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
         bpy_mesh = bpy.data.meshes.new(visual.type)
@@ -214,7 +255,7 @@ def import_visual(visual, root_object):
         b_mesh.to_mesh(bpy_mesh)
         bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
         if root_object:
-            bpy_object.parent = bpy.data.objects[root_object]
+            bpy_object.parent = root_object
         bpy.context.scene.objects.link(bpy_object)
 
 

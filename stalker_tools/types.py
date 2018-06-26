@@ -32,6 +32,13 @@ class SlideWindowData:
 
 
 class Visual:
+    class Bone:
+        def __init__(self, name, offset, rotate, parent):
+            self.name = name
+            self.offset = offset
+            self.rotate = rotate
+            self.parent = parent
+
     def __init__(self):
         self.type = None
         self.shader_id = None
@@ -47,3 +54,4 @@ class Visual:
         self.texture = None
         self.shader = None
         self.root_object = None
+        self.bones = []

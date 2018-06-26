@@ -102,20 +102,23 @@ def s_bone_shape(packed_reader):
     cylinder(packed_reader)
 
 
-def s_ikdata(data, bones):
+def s_ikdata(data, visual, bones):
     packed_reader = xray_io.PackedReader(data)
 
-    for bone in bones:
+    for bone_name, parent_name in bones:
         version = packed_reader.getf('I')[0]
         game_material = packed_reader.gets()
 
         s_bone_shape(packed_reader)
         s_joint_ik_data(packed_reader)
 
-        bind_offset = packed_reader.getf('3f')
-        bind_rotate = packed_reader.getf('3f')
+        rotate_x, rotate_y, rotate_z = packed_reader.getf('3f')
+        offset_x, offset_y, offset_z = packed_reader.getf('3f')
         mass = packed_reader.getf('f')[0]
         center_of_mass = packed_reader.getf('3f')
+
+        bone = visual.Bone(bone_name, (offset_x, offset_z, offset_y), (-rotate_x, -rotate_z, -rotate_y), parent_name)
+        visual.bones.append(bone)
 
 
 def cylinder(packed_reader):
@@ -148,7 +151,7 @@ def s_bone_names(data):
 
         obb(packed_reader)
 
-        bones.append(bone_name)
+        bones.append((bone_name, bone_parent))
 
     return bones
 
@@ -253,7 +256,7 @@ def children_l(data):
 def children(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
     for child_id, child_data in chunked_reader:
-        main(child_data, ogf=True, file=None, root=visual.root_object)
+        main(child_data, ogf=True, root=visual.root_object)
 
 
 def swidata(data, visual, fast_path=False):
@@ -361,12 +364,10 @@ def header(data, visual):
     visual.shader_id = shader_id
 
 
-def main(data, ogf=False, file=None, root=None):
+def main(data, ogf=False, root=None):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
-    if file:
-        visual.root_object = os.path.splitext(os.path.basename(file))[0]
-        importer.import_root_object(visual)
+    visual.root_object = root
 
     for chunk_id, chunk_data in chunked_reader:
         visual.chunks.append(hex(chunk_id))
@@ -405,7 +406,7 @@ def main(data, ogf=False, file=None, root=None):
             s_smparams(chunk_data)
 
         elif chunk_id == format_.Chunks.S_IKDATA:
-            s_ikdata(chunk_data, bones)
+            s_ikdata(chunk_data, visual, bones)
 
         elif chunk_id == format_.Chunks.S_USERDATA:
             s_userdata(chunk_data)
@@ -438,4 +439,7 @@ def file(file_path):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    main(data, ogf=True, file=file_path)
+    if file:
+        root_object_name = os.path.splitext(os.path.basename(file_path))[0]
+        root_object = importer.import_root_object(root_object_name)
+    main(data, ogf=True, root=root_object)
