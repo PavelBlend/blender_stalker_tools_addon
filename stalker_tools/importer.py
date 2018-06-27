@@ -6,6 +6,8 @@ import bpy
 import bmesh
 import mathutils
 
+from io_scene_xray import utils
+
 
 MATRIX_BONE = mathutils.Matrix((
     (1.0, 0.0, 0.0, 0.0),
@@ -27,11 +29,12 @@ def import_root_object(root_object_name):
 def import_bones(visual, root_object):
     bpy_armature = bpy.data.armatures.new('armature')
     bpy_armature.draw_type = 'STICK'
-    bpy_obj = bpy.data.objects.new('armature', bpy_armature)
-    bpy_obj.show_x_ray = True
-    bpy_obj.parent = root_object
-    bpy.context.scene.objects.link(bpy_obj)
-    bpy.context.scene.objects.active = bpy_obj
+    bpy_object = bpy.data.objects.new('armature', bpy_armature)
+    bpy_object.show_x_ray = True
+    bpy_object.xray.isroot = False
+    bpy_object.parent = root_object
+    bpy.context.scene.objects.link(bpy_object)
+    bpy.context.scene.objects.active = bpy_object
     bpy.ops.object.mode_set(mode='EDIT')
     matrices = {}
 
@@ -48,10 +51,10 @@ def import_bones(visual, root_object):
         bpy_bone.matrix = bone_matrix
 
     bpy.ops.object.mode_set(mode='OBJECT')
-    for bone in bpy_obj.pose.bones:
+    for bone in bpy_object.pose.bones:
         bone.rotation_mode = 'ZXY'
 
-    return bpy_obj
+    return bpy_object
 
 
 def crete_vertex_groups(visual, bpy_object):
@@ -271,6 +274,7 @@ def import_visual(visual, root_object, child=False):
         bpy_mat.xray.eshader = visual.shader
         bpy_mat.xray.cshader = 'default'
         bpy_mat.xray.gamemtl = 'default'
+        bpy_mat.xray.version = utils.plugin_version_number()
         bpy_mesh.materials.append(bpy_mat)
         bpy_mesh.use_auto_smooth = True
         bpy_mesh.auto_smooth_angle = math.pi
