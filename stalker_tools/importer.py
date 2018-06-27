@@ -49,15 +49,36 @@ def import_bones(visual, root_object):
     for bone in bpy_obj.pose.bones:
         bone.rotation_mode = 'ZXY'
 
+    return bpy_obj
 
-def import_visual(visual, root_object):
+
+def crete_vertex_groups(visual, bpy_object):
+    if not visual.armature:
+        return
+    for bone_index in visual.used_bones:
+        bone = visual.armature.data.bones[bone_index]
+        bpy_object.vertex_groups.new(name=bone.name)
+
+
+def import_visual(visual, root_object, child=False):
 
     if len(visual.bones):
-        import_bones(visual, root_object)
+        bpy_armature_obj = import_bones(visual, root_object)
+    else:
+        bpy_armature_obj = None
+
+    for child in visual.children_visuals:
+        child.armature = bpy_armature_obj
+        import_visual(child, root_object, child=True)
 
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
         bpy_mesh = bpy.data.meshes.new(visual.type)
+        bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
+        if root_object:
+            bpy_object.parent = root_object
+        bpy.context.scene.objects.link(bpy_object)
+        crete_vertex_groups(visual, bpy_object)
 
         if visual.swidata:
             visual.indices = visual.indices[visual.swidata[0].offset : ]
@@ -253,10 +274,6 @@ def import_visual(visual, root_object):
         bpy_mesh.show_edge_sharp = True
 
         b_mesh.to_mesh(bpy_mesh)
-        bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
-        if root_object:
-            bpy_object.parent = root_object
-        bpy.context.scene.objects.link(bpy_object)
 
 
 def import_visuals(level):

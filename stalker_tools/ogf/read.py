@@ -255,8 +255,11 @@ def children_l(data):
 
 def children(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
+    children_visuals = []
     for child_id, child_data in chunked_reader:
-        main(child_data, ogf=True, root=visual.root_object)
+        child_visual = main(child_data, ogf=True, root=visual.root_object, child=True)
+        children_visuals.append(child_visual)
+    return children_visuals
 
 
 def swidata(data, visual, fast_path=False):
@@ -292,6 +295,7 @@ def vertices(data, visual):
 
     vertex_format = packed_reader.getf('I')[0]
     vertices_count = packed_reader.getf('I')[0]
+    visual.used_bones = set()
 
     if vertex_format == format_.OGF_VERTEXFORMAT_FVF:
         for vertex_index in range(vertices_count):
@@ -312,17 +316,21 @@ def vertices(data, visual):
             tangent_x, tangent_y, tangent_z = packed_reader.getf('3f')
             binormal_x, binormal_y, binormal_z = packed_reader.getf('3f')
             texture_coord_u, texture_coord_v = packed_reader.getf('2f')
-            bone_influence = packed_reader.getf('I')[0]
+            bone = packed_reader.getf('I')[0]
+            visual.used_bones.add(bone)
 
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
             visual.normals.append((normal_x, normal_z, normal_y))
+            visual.weghts[vertex_index] = {bone: 1.0}
 
     elif vertex_format == format_.OGF4_VERTEXFORMAT_FVF_2L:
         for vertex_index in range(vertices_count):
 
             bone_0 = packed_reader.getf('H')[0]
             bone_1 = packed_reader.getf('H')[0]
+            visual.used_bones.add(bone_0)
+            visual.used_bones.add(bone_1)
             coord_x, coord_y, coord_z = packed_reader.getf('3f')
             normal_x, normal_y, normal_z = packed_reader.getf('3f')
             tangent_x, tangent_y, tangent_z = packed_reader.getf('3f')
@@ -364,7 +372,7 @@ def header(data, visual):
     visual.shader_id = shader_id
 
 
-def main(data, ogf=False, root=None):
+def main(data, ogf=False, root=None, child=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
     visual.root_object = root
@@ -388,7 +396,7 @@ def main(data, ogf=False, root=None):
             swidata(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN:
-            children(chunk_data, visual)
+            visual.children_visuals = children(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN_L:
             children_l(chunk_data)
@@ -429,7 +437,7 @@ def main(data, ogf=False, root=None):
         else:
             print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
 
-    if ogf:
+    if ogf and not child:
         importer.import_visual(visual, root)
 
     return visual

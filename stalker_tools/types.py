@@ -55,3 +55,5 @@ class Visual:
         self.shader = None
         self.root_object = None
         self.bones = []
+        self.weghts = {}
+        self.children_visuals = []
