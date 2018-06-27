@@ -57,3 +57,9 @@ class Visual:
         self.bones = []
         self.weghts = {}
         self.children_visuals = []
+        self.user_data = ''
+        self.owner_name = ''
+        self.creation_time = 0
+        self.modif_name = ''
+        self.modified_time = 0
+        self.motion_reference = None

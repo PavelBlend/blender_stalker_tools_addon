@@ -67,14 +67,30 @@ def crete_vertex_groups(visual, bpy_object):
 
 def import_visual(visual, root_object, child=False):
 
+    if visual.swidata:
+        root_object.xray.flags_simple = 'pd'
+
+    if not child:
+        root_object.xray.userdata = visual.user_data
+
+        root_object.xray.revision.owner = visual.owner_name
+        root_object.xray.revision.ctime = visual.creation_time
+        root_object.xray.revision.moder = visual.modif_name
+        root_object.xray.revision.mtime = visual.modified_time
+
+        if visual.motion_reference:
+            motion_references = root_object.xray.motionrefs_collection
+            for motion_reference in visual.motion_reference.split(','):
+                motion_references.add().name = motion_reference
+
     if len(visual.bones):
         bpy_armature_obj = import_bones(visual, root_object)
     else:
         bpy_armature_obj = None
 
-    for child in visual.children_visuals:
-        child.armature = bpy_armature_obj
-        import_visual(child, root_object, child=True)
+    for child_visual in visual.children_visuals:
+        child_visual.armature = bpy_armature_obj
+        import_visual(child_visual, root_object, child=True)
 
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()

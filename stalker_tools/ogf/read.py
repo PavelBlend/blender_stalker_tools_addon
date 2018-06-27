@@ -66,10 +66,12 @@ def swicontainer(data, visual):
     visual.swi_index = swi_index
 
 
-def s_userdata(data):
+def s_userdata(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
-    userdata = packed_reader.gets()
+    user_data = packed_reader.gets()
+
+    visual.user_data = user_data
 
 
 def s_joint_limit(packed_reader):
@@ -214,13 +216,15 @@ def treedef2(data, visual):
     visual.tree_xform = tree_xform
 
 
-def s_motion_refs_0(data):
+def s_motion_refs_0(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     motion_refs = packed_reader.gets()
 
+    visual.motion_reference = motion_refs
 
-def desc(data):
+
+def desc(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     source = packed_reader.gets()
@@ -233,6 +237,11 @@ def desc(data):
 
     modif_name = packed_reader.gets()
     modified_time = packed_reader.getf('I')[0]
+
+    visual.owner_name = owner_name
+    visual.creation_time = creation_time
+    visual.modif_name = modif_name
+    visual.modified_time = modified_time
 
 
 def loddef2(data):
@@ -436,13 +445,13 @@ def main(data, ogf=False, root=None, child=False):
             s_ikdata(chunk_data, visual, bones)
 
         elif chunk_id == format_.Chunks.S_USERDATA:
-            s_userdata(chunk_data)
+            s_userdata(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.DESC:
-            desc(chunk_data)
+            desc(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.S_MOTION_REFS_0:
-            s_motion_refs_0(chunk_data)
+            s_motion_refs_0(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.SWICONTAINER:
             swicontainer(chunk_data, visual)
