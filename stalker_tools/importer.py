@@ -19,6 +19,8 @@ MATRIX_BONE_INVERTED = MATRIX_BONE.inverted().freeze()
 def import_root_object(root_object_name):
     root_object = bpy.data.objects.new(root_object_name, None)
     bpy.context.scene.objects.link(root_object)
+    root_object.xray.isroot = True
+    root_object.xray.flags_simple = 'dy'
     return root_object
 
 
@@ -77,6 +79,7 @@ def import_visual(visual, root_object, child=False):
         bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
         if root_object:
             bpy_object.parent = root_object
+            bpy_object.xray.isroot = False
         bpy.context.scene.objects.link(bpy_object)
         crete_vertex_groups(visual, bpy_object)
 
