@@ -275,6 +275,14 @@ def import_visual(visual, root_object, child=False):
 
         b_mesh.to_mesh(bpy_mesh)
 
+        # assign weghts
+        for bone_index, vertices in visual.weghts.items():
+            for vertex_index, vertex_weght in vertices:
+                vertex_group = bpy_object.vertex_groups[visual.armature.data.bones[bone_index].name]
+                vertex_group.add([remap_indices[vertex_index], ], vertex_weght, type='REPLACE')
+        armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
+        armature_modifier.object = visual.armature
+
 
 def import_visuals(level):
     bpy_materials = []

@@ -322,7 +322,10 @@ def vertices(data, visual):
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
             visual.normals.append((normal_x, normal_z, normal_y))
-            visual.weghts[vertex_index] = {bone: 1.0}
+            if visual.weghts.get(bone):
+                visual.weghts[bone].append((vertex_index, 1.0))
+            else:
+                visual.weghts[bone] = [(vertex_index, 1.0), ]
 
     elif vertex_format == format_.OGF4_VERTEXFORMAT_FVF_2L:
         for vertex_index in range(vertices_count):
@@ -341,6 +344,21 @@ def vertices(data, visual):
             visual.vertices.append((coord_x, coord_z, coord_y))
             visual.uvs.append((texture_coord_u, 1 - texture_coord_v))
             visual.normals.append((normal_x, normal_z, normal_y))
+
+            if bone_0 == bone_1:
+                if visual.weghts.get(bone_0):
+                    visual.weghts[bone_0].append((vertex_index, 1 - bone_influence))
+                else:
+                    visual.weghts[bone_0] = [(vertex_index, 1 - bone_influence), ]
+            else:
+                if visual.weghts.get(bone_0):
+                    visual.weghts[bone_0].append((vertex_index, 1 - bone_influence))
+                else:
+                    visual.weghts[bone_0] = [(vertex_index, 1 - bone_influence), ]
+                if visual.weghts.get(bone_1):
+                    visual.weghts[bone_1].append((vertex_index, bone_influence))
+                else:
+                    visual.weghts[bone_1] = [(vertex_index, bone_influence), ]
 
     else:
         raise BaseException('Unknown vertex format: 0x{:x}'.format(vertex_format))
