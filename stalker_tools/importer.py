@@ -38,7 +38,9 @@ def import_bones(visual, root_object):
     bpy.ops.object.mode_set(mode='EDIT')
     matrices = {}
 
-    for bone in visual.bones:
+    visual.bones_names = {}
+    for bone_index, bone in enumerate(visual.bones):
+        visual.bones_names[bone_index] = bone.name
         bpy_bone = bpy_armature.edit_bones.new(bone.name)
         parent_matrix = matrices.get(bone.parent, mathutils.Matrix.Identity(4)) * MATRIX_BONE_INVERTED
         if bone.parent:
@@ -57,15 +59,16 @@ def import_bones(visual, root_object):
     return bpy_object
 
 
-def crete_vertex_groups(visual, bpy_object):
+def crete_vertex_groups(visual, bpy_object, root_visual):
     if not visual.armature:
         return
     for bone_index in visual.used_bones:
-        bone = visual.armature.data.bones[bone_index]
+        bone_name = root_visual.bones_names[bone_index]
+        bone = visual.armature.data.bones[bone_name]
         bpy_object.vertex_groups.new(name=bone.name)
 
 
-def import_visual(visual, root_object, child=False):
+def import_visual(visual, root_object, child=False, root_visual=None):
 
     if visual.swidata:
         root_object.xray.flags_simple = 'pd'
@@ -90,7 +93,7 @@ def import_visual(visual, root_object, child=False):
 
     for child_visual in visual.children_visuals:
         child_visual.armature = bpy_armature_obj
-        import_visual(child_visual, root_object, child=True)
+        import_visual(child_visual, root_object, child=True, root_visual=visual)
 
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
@@ -100,7 +103,7 @@ def import_visual(visual, root_object, child=False):
             bpy_object.parent = root_object
             bpy_object.xray.isroot = False
         bpy.context.scene.objects.link(bpy_object)
-        crete_vertex_groups(visual, bpy_object)
+        crete_vertex_groups(visual, bpy_object, root_visual)
 
         if visual.swidata:
             visual.indices = visual.indices[visual.swidata[0].offset : ]
@@ -301,7 +304,8 @@ def import_visual(visual, root_object, child=False):
         # assign weghts
         for bone_index, vertices in visual.weghts.items():
             for vertex_index, vertex_weght in vertices:
-                vertex_group = bpy_object.vertex_groups[visual.armature.data.bones[bone_index].name]
+                bone_name = root_visual.bones_names[bone_index]
+                vertex_group = bpy_object.vertex_groups[bone_name]
                 vertex_group.add([remap_indices[vertex_index], ], vertex_weght, type='REPLACE')
         armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
         armature_modifier.object = visual.armature
