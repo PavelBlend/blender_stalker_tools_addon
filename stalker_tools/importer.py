@@ -60,6 +60,8 @@ def import_bones(visual, root_object):
 
 
 def crete_vertex_groups(visual, bpy_object, root_visual):
+    if not hasattr(visual, 'armature'):
+        return
     if not visual.armature:
         return
     for bone_index in visual.used_bones:
@@ -307,8 +309,9 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 bone_name = root_visual.bones_names[bone_index]
                 vertex_group = bpy_object.vertex_groups[bone_name]
                 vertex_group.add([remap_indices[vertex_index], ], vertex_weght, type='REPLACE')
-        armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
-        armature_modifier.object = visual.armature
+        if visual.bones:
+            armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
+            armature_modifier.object = visual.armature
 
 
 def import_visuals(level):
