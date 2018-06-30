@@ -309,7 +309,7 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 bone_name = root_visual.bones_names[bone_index]
                 vertex_group = bpy_object.vertex_groups[bone_name]
                 vertex_group.add([remap_indices[vertex_index], ], vertex_weght, type='REPLACE')
-        if visual.bones:
+        if getattr(visual, 'armature'):
             armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
             armature_modifier.object = visual.armature
 
