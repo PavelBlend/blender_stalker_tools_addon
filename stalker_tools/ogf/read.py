@@ -171,7 +171,7 @@ def motion_def(packed_reader):
 	falloff = packed_reader.getf('f')[0]
 
 
-def s_smparams(data):
+def s_smparams(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     params_version = packed_reader.getf('H')[0]
@@ -181,16 +181,24 @@ def s_smparams(data):
         partition_name = packed_reader.gets()
         bone_count = packed_reader.getf('H')[0]
 
+        partition = visual.Partition(partition_name)
+
         for bone in range(bone_count):
             if params_version == 1:
                 bone_id = packed_reader.getf('I')[0]
+                partition.bones_indices.append(bone_id)
             elif params_version == 2:
                 bone_name = packed_reader.gets()
+                partition.bones_names.append(bone_name)
             elif params_version == 3 or params_version == 4:
                 bone_name = packed_reader.gets()
                 bone_id = packed_reader.getf('I')[0]
+                partition.bones_names.append(bone_name)
+                partition.bones_indices.append(bone_id)
             else:
                 raise BaseException('Unknown params version')
+
+        visual.partitions.append(partition)
 
     motion_count = packed_reader.getf('H')[0]
 
@@ -439,7 +447,7 @@ def main(data, ogf=False, root=None, child=False):
             bones = s_bone_names(chunk_data)
 
         elif chunk_id == format_.Chunks.S_SMPARAMS:
-            s_smparams(chunk_data)
+            s_smparams(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.S_IKDATA:
             s_ikdata(chunk_data, visual, bones)

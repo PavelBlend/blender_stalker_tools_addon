@@ -26,7 +26,7 @@ def import_root_object(root_object_name):
     return root_object
 
 
-def import_bones(visual, root_object):
+def import_bones(visual, root_object, root_visual):
     bpy_armature = bpy.data.armatures.new('armature')
     bpy_armature.draw_type = 'STICK'
     bpy_object = bpy.data.objects.new('armature', bpy_armature)
@@ -55,6 +55,18 @@ def import_bones(visual, root_object):
     bpy.ops.object.mode_set(mode='OBJECT')
     for bone in bpy_object.pose.bones:
         bone.rotation_mode = 'ZXY'
+
+    if visual.partitions:
+        for partition in visual.partitions:
+            bone_group = bpy_object.pose.bone_groups.new(partition.name)
+            if partition.bones_names:
+                for bone_name in partition.bones_names:
+                    bpy_object.pose.bones[bone_name].bone_group = bone_group
+            elif partition.bones_indices:
+                for bone_idnex in partition.bones_indices:
+                    bone = visual.bones[bone_idnex]
+                    bone_name = bone.name
+                    bpy_object.pose.bones[bone_name].bone_group = bone_group
 
     return bpy_object
 
@@ -89,7 +101,7 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 motion_references.add().name = motion_reference
 
     if len(visual.bones):
-        bpy_armature_obj = import_bones(visual, root_object)
+        bpy_armature_obj = import_bones(visual, root_object, root_visual)
     else:
         bpy_armature_obj = None
 

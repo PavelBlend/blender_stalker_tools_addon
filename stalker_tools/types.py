@@ -39,6 +39,12 @@ class Visual:
             self.rotate = rotate
             self.parent = parent
 
+    class Partition:
+        def __init__(self, name):
+            self.name = name
+            self.bones_indices = []
+            self.bones_names = []
+
     def __init__(self):
         self.type = None
         self.shader_id = None
@@ -63,3 +69,4 @@ class Visual:
         self.modif_name = ''
         self.modified_time = 0
         self.motion_reference = None
+        self.partitions = []
