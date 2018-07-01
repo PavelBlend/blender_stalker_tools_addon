@@ -33,11 +33,22 @@ class SlideWindowData:
 
 class Visual:
     class Bone:
-        def __init__(self, name, offset, rotate, parent):
-            self.name = name
-            self.offset = offset
-            self.rotate = rotate
-            self.parent = parent
+        def __init__(self):
+            self.name = None
+            self.offset = None
+            self.rotate = None
+            self.parent = None
+            self.game_material = None
+            self.mass = None
+            self.center_of_mass = None
+            self.shape_type = None
+            self.shape_flags = None
+            self.sphere_position = None
+            self.sphere_radius = None
+            self.cylinder_center = None
+            self.cylinder_direction = None
+            self.cylinder_height = None
+            self.cylinder_radius = None
 
     class Partition:
         def __init__(self, name):

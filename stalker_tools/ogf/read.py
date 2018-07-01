@@ -80,7 +80,7 @@ def s_joint_limit(packed_reader):
     damping_factor = packed_reader.getf('f')[0]
 
 
-def s_joint_ik_data(packed_reader):
+def s_joint_ik_data(packed_reader, bone):
     type = packed_reader.getf('I')[0]
 
     s_joint_limit(packed_reader)
@@ -95,50 +95,75 @@ def s_joint_ik_data(packed_reader):
     friction = packed_reader.getf('f')[0]
 
 
-def s_bone_shape(packed_reader):
+def s_bone_shape(packed_reader, bone):
     type = packed_reader.getf('H')[0]
     flags = packed_reader.getf('H')[0]
 
-    obb(packed_reader)
-    sphere(packed_reader)
-    cylinder(packed_reader)
+    obb(packed_reader, bone)
+    sphere(packed_reader, bone)
+    cylinder(packed_reader, bone)
+
+    bone.shape_type = type
+    bone.shape_flags = flags
 
 
 def s_ikdata(data, visual, bones):
     packed_reader = xray_io.PackedReader(data)
 
     for bone_name, parent_name in bones:
+
+        bone = visual.Bone()
+
         version = packed_reader.getf('I')[0]
         game_material = packed_reader.gets()
 
-        s_bone_shape(packed_reader)
-        s_joint_ik_data(packed_reader)
+        s_bone_shape(packed_reader, bone)
+        s_joint_ik_data(packed_reader, bone)
 
         rotate_x, rotate_y, rotate_z = packed_reader.getf('3f')
         offset_x, offset_y, offset_z = packed_reader.getf('3f')
         mass = packed_reader.getf('f')[0]
         center_of_mass = packed_reader.getf('3f')
 
-        bone = visual.Bone(bone_name, (offset_x, offset_z, offset_y), (-rotate_x, -rotate_z, -rotate_y), parent_name)
+        bone.name = bone_name
+        bone.parent = parent_name
+        bone.offset = (offset_x, offset_z, offset_y)
+        bone.rotate = (-rotate_x, -rotate_z, -rotate_y)
+        bone.game_material = game_material
+        bone.mass = mass
+        bone.center_of_mass = center_of_mass
         visual.bones.append(bone)
 
 
-def cylinder(packed_reader):
+def cylinder(packed_reader, bone):
     center = packed_reader.getf('3f')
     direction = packed_reader.getf('3f')
     height = packed_reader.getf('f')[0]
     radius = packed_reader.getf('f')[0]
 
+    bone.cylinder_center = center
+    bone.cylinder_direction = direction
+    bone.cylinder_height = height
+    bone.cylinder_radius = radius
 
-def sphere(packed_reader):
+
+def sphere(packed_reader, bone):
     position = packed_reader.getf('3f')
     radius = packed_reader.getf('f')[0]
 
+    bone.sphere_position = position
+    bone.sphere_radius = radius
 
-def obb(packed_reader):
+
+def obb(packed_reader, bone=None):
     rotate = packed_reader.getf('9f')
     translate = packed_reader.getf('3f')
     halfsize = packed_reader.getf('3f')
+
+    if bone:
+        bone.box_rotate = rotate
+        bone.box_translate = translate
+        bone.box_halfsize = halfsize
 
 
 def s_bone_names(data):

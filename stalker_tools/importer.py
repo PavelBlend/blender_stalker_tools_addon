@@ -56,6 +56,23 @@ def import_bones(visual, root_object, root_visual):
     for bone in bpy_object.pose.bones:
         bone.rotation_mode = 'ZXY'
 
+    for bone_index, bone in enumerate(visual.bones):
+        bpy_bone = bpy_armature.bones[bone.name]
+        bpy_bone.xray.gamemtl = bone.game_material
+        bpy_bone.xray.mass.value = bone.mass
+        bpy_bone.xray.mass.center = bone.center_of_mass
+        bpy_bone.xray.shape.type = str(bone.shape_type)
+        bpy_bone.xray.shape.flags = bone.shape_flags
+        bpy_bone.xray.shape.sph_pos = bone.sphere_position
+        bpy_bone.xray.shape.sph_rad = bone.sphere_radius
+        bpy_bone.xray.shape.cyl_pos = bone.cylinder_center
+        bpy_bone.xray.shape.cyl_dir = bone.cylinder_direction
+        bpy_bone.xray.shape.cyl_hgh = bone.cylinder_height
+        bpy_bone.xray.shape.cyl_rad = bone.cylinder_radius
+        bpy_bone.xray.shape.box_rot = bone.box_rotate
+        bpy_bone.xray.shape.box_trn = bone.box_translate
+        bpy_bone.xray.shape.box_hsz = bone.box_halfsize
+
     if visual.partitions:
         for partition in visual.partitions:
             bone_group = bpy_object.pose.bone_groups.new(partition.name)
