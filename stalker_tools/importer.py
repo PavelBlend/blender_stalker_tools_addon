@@ -72,6 +72,7 @@ def import_bones(visual, root_object, root_visual):
         bpy_bone.xray.shape.box_rot = bone.box_rotate
         bpy_bone.xray.shape.box_trn = bone.box_translate
         bpy_bone.xray.shape.box_hsz = bone.box_halfsize
+        bpy_bone.xray.shape.set_curver()
 
     if visual.partitions:
         for partition in visual.partitions:

@@ -14,7 +14,6 @@ def slide_windows_indices(data, level):
         reserved = packed_reader.getf('4I')
         slide_windows_count = packed_reader.getf('I')[0]
         swis = []
-        # read ogf !!!!!!!!!!!!!
         for slide_window_index in range(slide_windows_count):
             offset = packed_reader.getf('I')[0]
             triangles_count = packed_reader.getf('H')[0]
