@@ -5,7 +5,7 @@ import bpy
 
 from .. import xray_io
 from .. import ogf
-from .. import importer
+from . import importer
 from . import format_
 from . import geom
 

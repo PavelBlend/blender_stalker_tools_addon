@@ -3,7 +3,7 @@ import os
 
 from .. import xray_io
 from .. import types
-from .. import importer
+from . import importer
 from . import format_
 
 
