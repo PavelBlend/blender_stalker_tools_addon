@@ -1,10 +1,14 @@
 
 import time
 
-from ... import xray_io
 from ... import types
 from .. import format_
 from .. import read
+
+try:
+    from io_scene_xray import xray_io
+except ImportError:
+    pass
 
 
 def slide_windows_indices(data, level):

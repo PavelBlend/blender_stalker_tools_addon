@@ -1,10 +1,14 @@
 
 import os
 
-from .. import xray_io
 from .. import types
 from . import importer
 from . import format_
+
+try:
+    from io_scene_xray import xray_io
+except ImportError:
+    pass
 
 
 def ogf_color(packed_reader):

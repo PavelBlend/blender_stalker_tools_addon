@@ -6,7 +6,10 @@ import bpy
 import bmesh
 import mathutils
 
-from io_scene_xray import utils
+try:
+    from io_scene_xray import utils
+except ImportError:
+    pass
 
 
 MATRIX_BONE = mathutils.Matrix((
