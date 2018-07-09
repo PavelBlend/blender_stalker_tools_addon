@@ -1,17 +1,25 @@
 
 class Level:
     def __init__(self):
+        self.file_path = None
         self.vertex_buffers = []
         self.indices_buffers = []
         self.swis_buffers = []
         self.visuals = []
         self.materials = []
+        self.shaders = []
+        self.lmaps = []
+        self.lmaps_0 = []
+        self.lmaps_1 = []
 
 
 class VertexBuffer:
     def __init__(self):
         self.position = []
         self.uv = []
+        self.uv_lmap = []
+        self.colors_light = []
+        self.colors_sun = []
 
 
 class GeometryContainer:

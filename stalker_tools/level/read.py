@@ -100,14 +100,24 @@ def shaders(data, level):
         light_maps_count = textures.count(',')
         if not light_maps_count:
             texture = textures
+            level.lmaps.append(None)
+            level.lmaps_0.append(None)
+            level.lmaps_1.append(None)
         elif light_maps_count == 1:
             texture, lmap = textures.split(',')
+            level.lmaps.append(lmap)
+            level.lmaps_0.append(None)
+            level.lmaps_1.append(None)
         elif light_maps_count == 2:
             texture, lmap_0, lmap_1 = textures.split(',')
+            level.lmaps.append(None)
+            level.lmaps_0.append(lmap_0)
+            level.lmaps_1.append(lmap_1)
         else:
             raise Exception('Shader has to many lmaps!')
 
         level.materials.append(texture)
+        level.shaders.append(engine_shader)
 
 
 def header(data):
@@ -159,6 +169,7 @@ def main(data, level):
 def file(file_path):
     st = time.time()
     level = geom.read.file(file_path + '.geom')
+    level.file_path = file_path
     print('load geom:', time.time() - st)
     file = open(file_path, 'rb')
     data = file.read()

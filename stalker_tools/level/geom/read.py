@@ -74,25 +74,29 @@ def vertex_buffers(data, level):
                             texcoord += 1
                         else:
                             lmap_u, lmap_v = packed_reader.getf('2f')
+                            vertex_buffer.uv_lmap.append((lmap_u, 1 - lmap_v))
                     elif format_.types[type] == format_.SHORT2:
                         if texcoord == 0:
                             coord_u, coord_v = packed_reader.getf('2h')
                             vertex_buffer.uv.append((coord_u / 1024, 1 - coord_v / 1024))
                             texcoord += 1
                         else:
-                            lmap_u, lmap_v = packed_reader.getf('2H')
+                            lmap_u, lmap_v = packed_reader.getf('2h')
+                            vertex_buffer.uv_lmap.append((lmap_u / (2 ** 15 - 1), 1 - lmap_v / (2 ** 15 - 1)))
                     elif format_.types[type] == format_.SHORT4:
                         coord_u, coord_v = packed_reader.getf('2h')
                         vertex_buffer.uv.append((coord_u / 2048, 1 - coord_v / 2048))
-                        lmap_u, lmap_v = packed_reader.getf('2H')
+                        shader_data, unused = packed_reader.getf('2H')
                     else:
                         print('UNKNOWN VERTEX BUFFER TYPE:', type)
                 elif format_.usage[usage] == format_.TANGENT:
-                    tangents = packed_reader.getf('4B')
+                    tangent = packed_reader.getf('4B')
                 elif format_.usage[usage] == format_.BINORMAL:
-                    binormals = packed_reader.getf('4B')
+                    binormal = packed_reader.getf('4B')
                 elif format_.usage[usage] == format_.COLOR:
-                    colors = packed_reader.getf('4B')
+                    color = packed_reader.getf('4B')
+                    vertex_buffer.colors_light.append((color[2] / 255, color[1] / 255, color[0] / 255))
+                    vertex_buffer.colors_sun.append(color[3])
                 else:
                     print('UNKNOWN VERTEX BUFFER USAGE:', usage)
         level.vertex_buffers.append(vertex_buffer)
