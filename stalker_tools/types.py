@@ -3,6 +3,14 @@ class Sector:
     def __init__(self):
         self.root = None
 
+
+class FastPathGeom:
+    def __init__(self):
+        self.vertex_buffers = []
+        self.indices_buffers = []
+        self.swis_buffers = []
+
+
 class Level:
     def __init__(self):
         self.file_path = None
@@ -16,6 +24,13 @@ class Level:
         self.lmaps_0 = []
         self.lmaps_1 = []
         self.sectors = []
+        self.fastpath = FastPathGeom()
+
+
+class FastPath:
+    def __init__(self):
+        self.gcontainer = None
+        self.swidata = None
 
 
 class VertexBuffer:
@@ -95,3 +110,4 @@ class Visual:
         self.motion_reference = None
         self.partitions = []
         self.children_l = []
+        self.fastpath = None

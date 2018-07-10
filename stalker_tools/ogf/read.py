@@ -29,6 +29,7 @@ def bbox(packed_reader):
 
 def fastpath(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
+    visual.fastpath = types.FastPath()
 
     for chunk_id, chunk_data in chunked_reader:
 
@@ -61,6 +62,8 @@ def gcontainer(data, visual, fast_path=False):
 
     if not fast_path:
         visual.gcontainer = gcontainer
+    else:
+        visual.fastpath.gcontainer = gcontainer
 
 
 def swicontainer(data, visual):
@@ -327,6 +330,8 @@ def swidata(data, visual, fast_path=False):
 
     if not fast_path:
         visual.swidata = swis
+    else:
+        visual.fastpath.swidata = swis
 
 
 def indices(data, visual):

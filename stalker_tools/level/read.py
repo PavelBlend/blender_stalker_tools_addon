@@ -173,7 +173,9 @@ def main(data, level):
 
 def file(file_path):
     st = time.time()
-    level = geom.read.file(file_path + '.geom')
+    level = types.Level()
+    geom.read.file(file_path + '.geom', level)
+    geom.read.file(file_path + '.geomx', level, fastpath=True)
     level.file_path = file_path
     print('load geom:', time.time() - st)
     file = open(file_path, 'rb')

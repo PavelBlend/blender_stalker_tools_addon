@@ -11,7 +11,7 @@ except ImportError:
     pass
 
 
-def slide_windows_indices(data, level):
+def slide_windows_indices(data, level, fastpath=False):
     packed_reader = xray_io.PackedReader(data)
     swi_buffers_count = packed_reader.getf('I')[0]
     for swi_buffer_index in range(swi_buffers_count):
@@ -28,19 +28,25 @@ def slide_windows_indices(data, level):
             swi.triangles_count = triangles_count
             swi.vertices_count = vertices_count
             swis.append(swi)
-        level.swis_buffers.append(swis)
+        if not fastpath:
+            level.swis_buffers.append(swis)
+        else:
+            level.fastpath.swis_buffers.append(swis)
 
 
-def indices_buffers(data, level):
+def indices_buffers(data, level, fastpath=False):
     packed_reader = xray_io.PackedReader(data)
     indices_buffers_count = packed_reader.getf('I')[0]
     for indices_buffer_index in range(indices_buffers_count):
         indices_count = packed_reader.getf('I')[0]
         indices_buffer = packed_reader.getf('{0}H'.format(indices_count))
-        level.indices_buffers.append(indices_buffer)
+        if not fastpath:
+            level.indices_buffers.append(indices_buffer)
+        else:
+            level.fastpath.indices_buffers.append(indices_buffer)
 
 
-def vertex_buffers(data, level):
+def vertex_buffers(data, level, fastpath=False):
     packed_reader = xray_io.PackedReader(data)
     vertex_buffers_count = packed_reader.getf('I')[0]
     for vertex_buffer_index in range(vertex_buffers_count):
@@ -99,11 +105,14 @@ def vertex_buffers(data, level):
                     vertex_buffer.colors_sun.append(color[3])
                 else:
                     print('UNKNOWN VERTEX BUFFER USAGE:', usage)
-        level.vertex_buffers.append(vertex_buffer)
+        if not fastpath:
+            level.vertex_buffers.append(vertex_buffer)
+        else:
+            level.fastpath.vertex_buffers.append(vertex_buffer)
 
 
-def main(data):
-    level = types.Level()
+def main(data, level, fastpath=False):
+
     chunked_reader = xray_io.ChunkedReader(data)
 
     for chunk_id, chunk_data in chunked_reader:
@@ -113,17 +122,17 @@ def main(data):
 
         elif chunk_id == format_.Chunks.Geometry.VB:
             st = time.time()
-            vertex_buffers(chunk_data, level)
+            vertex_buffers(chunk_data, level, fastpath)
             print('Load VB:', time.time() - st)
 
         elif chunk_id == format_.Chunks.Geometry.IB:
             st = time.time()
-            indices_buffers(chunk_data, level)
+            indices_buffers(chunk_data, level, fastpath)
             print('Load IB:', time.time() - st)
 
         elif chunk_id == format_.Chunks.Geometry.SWIS:
             st = time.time()
-            slide_windows_indices(chunk_data, level)
+            slide_windows_indices(chunk_data, level, fastpath)
             print('Load SWIS:', time.time() - st)
 
         else:
@@ -132,9 +141,8 @@ def main(data):
     return level
 
 
-def file(file_path):
+def file(file_path, level, fastpath=False):
     file = open(file_path, 'rb')
     data = file.read()
     file.close()
-    level = main(data)
-    return level
+    main(data, level, fastpath)

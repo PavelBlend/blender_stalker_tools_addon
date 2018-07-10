@@ -315,6 +315,45 @@ def import_visuals(level):
                 rotate = rotate.to_euler('ZXY')
                 bpy_object.rotation_euler = -rotate[0], -rotate[2], -rotate[1]
 
+            # import fast path geometry
+            if visual.fastpath:
+                b_mesh = bmesh.new()
+                bpy_mesh = bpy.data.meshes.new('FASTPATH')
+
+                vertex_buffer = level.fastpath.vertex_buffers[visual.fastpath.gcontainer.vb_index]
+                vertices = vertex_buffer.position[visual.fastpath.gcontainer.vb_offset : visual.fastpath.gcontainer.vb_offset + visual.fastpath.gcontainer.vb_size]
+
+                for vertex in vertices:
+                    b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
+                b_mesh.verts.ensure_lookup_table()
+
+                indices_buffer = level.fastpath.indices_buffers[visual.fastpath.gcontainer.ib_index]
+                indices = indices_buffer[visual.fastpath.gcontainer.ib_offset : visual.fastpath.gcontainer.ib_offset + visual.fastpath.gcontainer.ib_size]
+
+                if visual.fastpath.swidata:
+                    indices = indices[visual.fastpath.swidata[0].offset : ]
+
+                for i in range(0, len(indices), 3):
+                    v1 = b_mesh.verts[indices[i]]
+                    v2 = b_mesh.verts[indices[i + 2]]
+                    v3 = b_mesh.verts[indices[i + 1]]
+                    try:
+                        face = b_mesh.faces.new((v1, v2, v3))
+                        face.smooth = True
+                    except ValueError:
+                        pass
+
+                b_mesh.faces.ensure_lookup_table()
+                b_mesh.normal_update()
+
+                b_mesh.to_mesh(bpy_mesh)
+                bpy_object_fastpath = bpy.data.objects.new('FASTPATH', bpy_mesh)
+                bpy_object_fastpath.show_wire = True
+                bpy_object_fastpath.show_all_edges = True
+                bpy_object_fastpath.draw_type = 'WIRE'
+                bpy.context.scene.objects.link(bpy_object_fastpath)
+                bpy_object_fastpath.parent = bpy_object
+
         else:
             bpy_object = bpy.data.objects.new(visual.type, None)
             bpy.context.scene.objects.link(bpy_object)
