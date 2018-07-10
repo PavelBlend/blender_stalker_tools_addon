@@ -292,11 +292,12 @@ def loddef2(data):
             pad = packed_reader.getf('3B')
 
 
-def children_l(data):
+def children_l(data, visual):
     packed_reader = xray_io.PackedReader(data)
     children_count = packed_reader.getf('I')[0]
-    for children_index in range(children_count):
-        children = packed_reader.getf('I')[0]
+    for child_index in range(children_count):
+        child = packed_reader.getf('I')[0]
+        visual.children_l.append(child)
 
 
 def children(data, visual):
@@ -464,7 +465,7 @@ def main(data, ogf=False, root=None, child=False):
             visual.children_visuals = children(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.CHILDREN_L:
-            children_l(chunk_data)
+            children_l(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.LODDEF2:
             loddef2(chunk_data)

@@ -210,7 +210,8 @@ def import_visuals(level):
 
     # Import meshes
     loaded_visuals = {}
-    for visual in level.visuals:
+    imported_visuals_names = {}
+    for visual_index, visual in enumerate(level.visuals):
         if visual.gcontainer:
             visual_key = '{0},{1},{2},{3},{4},{5}'.format(
                 visual.gcontainer.vb_index,
@@ -297,6 +298,7 @@ def import_visuals(level):
 
             bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
+            imported_visuals_names[visual_index] = bpy_object.name
 
             if visual.tree_xform:
                 t = visual.tree_xform
@@ -312,3 +314,11 @@ def import_visuals(level):
                 bpy_object.scale = scale[0], scale[2], scale[1]
                 rotate = rotate.to_euler('ZXY')
                 bpy_object.rotation_euler = -rotate[0], -rotate[2], -rotate[1]
+
+        else:
+            bpy_object = bpy.data.objects.new(visual.type, None)
+            bpy.context.scene.objects.link(bpy_object)
+            imported_visuals_names[visual_index] = bpy_object.name
+            for child in visual.children_l:
+                bpy_child_object = bpy.data.objects[imported_visuals_names[child]]
+                bpy_child_object.parent = bpy_object

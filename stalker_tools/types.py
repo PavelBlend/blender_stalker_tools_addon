@@ -89,3 +89,4 @@ class Visual:
         self.modified_time = 0
         self.motion_reference = None
         self.partitions = []
+        self.children_l = []
