@@ -106,12 +106,12 @@ def import_visuals(level):
             node_tree = bpy_mat.node_tree
 
             output_node = node_tree.nodes['Output']
-            output_node.location = (580.3516235351562, 375.3576965332031)
+            output_node.location = (880.3516235351562, 375.3576965332031)
             output_node.select = False
 
             material_node = node_tree.nodes['Material']
             material_node.material = bpy_mat
-            material_node.location = (385.1767578125, 421.38262939453125)
+            material_node.location = (685.1767578125, 421.38262939453125)
             material_node.select = False
 
             uv_lmap_node = node_tree.nodes.new('ShaderNodeGeometry')
@@ -180,12 +180,21 @@ def import_visuals(level):
             sun_node.location = (10.250570297241211, 16.821426391601562)
             sun_node.select = False
 
+            ambient_node = node_tree.nodes.new('ShaderNodeMixRGB')
+            ambient_node.name = '+ Ambient'
+            ambient_node.label = '+ Ambient'
+            ambient_node.inputs['Fac'].default_value = 1.0
+            ambient_node.inputs['Color2'].default_value = (0.05, 0.05, 0.05, 1.0)
+            ambient_node.blend_type = 'ADD'
+            ambient_node.location = (210.250570297241211, 16.821426391601562)
+            ambient_node.select = False
+
             light_maps_node = node_tree.nodes.new('ShaderNodeMixRGB')
             light_maps_node.name = 'Light Maps'
             light_maps_node.label = 'Light Maps'
             light_maps_node.inputs['Fac'].default_value = 1.0
             light_maps_node.blend_type = 'MULTIPLY'
-            light_maps_node.location = (193.79037475585938, 164.41893005371094)
+            light_maps_node.location = (493.79037475585938, 164.41893005371094)
             light_maps_node.select = False
 
             # Generate node links
@@ -204,8 +213,9 @@ def import_visuals(level):
                 node_tree.links.new(lmap_2_texture_node.outputs['Color'], hemi_light_node.inputs['Color1'])
             node_tree.links.new(hemi_light_node.outputs['Color'], sun_node.inputs['Color1'])
             node_tree.links.new(uv_texture_node.outputs['UV'], texture_node.inputs['Vector'])
-            node_tree.links.new(sun_node.outputs['Color'], light_maps_node.inputs['Color2'])
+            node_tree.links.new(sun_node.outputs['Color'], ambient_node.inputs['Color1'])
             node_tree.links.new(texture_node.outputs['Color'], light_maps_node.inputs['Color1'])
+            node_tree.links.new(ambient_node.outputs['Color'], light_maps_node.inputs['Color2'])
             node_tree.links.new(light_maps_node.outputs['Color'], material_node.inputs['Color'])
 
     # Import meshes
