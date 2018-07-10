@@ -235,7 +235,9 @@ def import_visuals(level):
             if not bpy_mesh_name:
                 b_mesh = bmesh.new()
                 bpy_mesh = bpy.data.meshes.new(visual.type)
-                bpy_mesh.materials.append(bpy_materials[visual.shader_id])
+                bpy_mat = bpy_materials[visual.shader_id]
+                bpy_tex = bpy_mat.texture_slots[0].texture
+                bpy_mesh.materials.append(bpy_mat)
 
                 vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
                 vertices = vertex_buffer.position[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
@@ -299,6 +301,85 @@ def import_visuals(level):
                             bmesh_color.r = color
                             bmesh_color.g = color
                             bmesh_color.b = color
+
+                if colors_light and not bpy_mat.use_nodes:
+
+                    bpy_mat.use_nodes = True
+                    bpy_mat.texture_slots[0].use_map_color_diffuse = False
+                    bpy_mat.texture_slots[0].use_map_alpha = False
+                    node_tree = bpy_mat.node_tree
+
+                    output_node = node_tree.nodes['Output']
+                    output_node.location = (880.3516235351562, 375.3576965332031)
+                    output_node.select = False
+
+                    material_node = node_tree.nodes['Material']
+                    material_node.material = bpy_mat
+                    material_node.location = (685.1767578125, 421.38262939453125)
+                    material_node.select = False
+
+                    light_node = node_tree.nodes.new('ShaderNodeGeometry')
+                    light_node.name = 'Light'
+                    light_node.label = 'Light'
+                    light_node.color_layer = 'Light'
+                    light_node.location = (-111.93138122558594, 269.0376892089844)
+                    light_node.select = False
+
+                    sun_node = node_tree.nodes.new('ShaderNodeGeometry')
+                    sun_node.name = 'Sun'
+                    sun_node.label = 'Sun'
+                    sun_node.color_layer = 'Sun'
+                    sun_node.location = (-111.93138122558594, -15.771751403808594)
+                    sun_node.select = False
+
+                    uv_texture_node = node_tree.nodes.new('ShaderNodeGeometry')
+                    uv_texture_node.name = 'UV Texture'
+                    uv_texture_node.label = 'UV Texture'
+                    uv_texture_node.uv_layer = 'Texture'
+                    uv_texture_node.location = (-7.684539794921875, 624.1194458007812)
+                    uv_texture_node.select = False
+
+                    texture_node = node_tree.nodes.new('ShaderNodeTexture')
+                    texture_node.name = 'Texture'
+                    texture_node.label = 'Texture'
+                    texture_node.texture = bpy_tex
+                    texture_node.location = (215.8828887939453, 620.5947875976562)
+                    texture_node.select = False
+
+                    light_sun_node = node_tree.nodes.new('ShaderNodeMixRGB')
+                    light_sun_node.name = 'Light + Sun'
+                    light_sun_node.label = 'Light + Sun'
+                    light_sun_node.inputs['Fac'].default_value = 1.0
+                    light_sun_node.blend_type = 'ADD'
+                    light_sun_node.location = (73.60041809082031, 134.22515869140625)
+                    light_sun_node.select = False
+
+                    ambient_node = node_tree.nodes.new('ShaderNodeMixRGB')
+                    ambient_node.name = '+ Ambient'
+                    ambient_node.label = '+ Ambient'
+                    ambient_node.inputs['Fac'].default_value = 1.0
+                    ambient_node.blend_type = 'ADD'
+                    ambient_node.inputs['Color2'].default_value = (0.05, 0.05, 0.05, 1.0)
+                    ambient_node.location = (259.86334228515625, 151.3456268310547)
+                    ambient_node.select = False
+
+                    vertex_colors_node = node_tree.nodes.new('ShaderNodeMixRGB')
+                    vertex_colors_node.name = 'Vertex Colors'
+                    vertex_colors_node.label = 'Vertex Colors'
+                    vertex_colors_node.inputs['Fac'].default_value = 1.0
+                    vertex_colors_node.blend_type = 'MULTIPLY'
+                    vertex_colors_node.location = (465.1767578125, 220.51089477539062)
+                    vertex_colors_node.select = False
+
+                    # Generate links
+                    node_tree.links.new(texture_node.outputs['Value'], output_node.inputs['Alpha'])
+                    node_tree.links.new(texture_node.outputs['Color'], vertex_colors_node.inputs['Color1'])
+                    node_tree.links.new(vertex_colors_node.outputs['Color'], material_node.inputs['Color'])
+                    node_tree.links.new(ambient_node.outputs['Color'], vertex_colors_node.inputs['Color2'])
+                    node_tree.links.new(uv_texture_node.outputs['UV'], texture_node.inputs['Vector'])
+                    node_tree.links.new(light_sun_node.outputs['Color'], ambient_node.inputs['Color1'])
+                    node_tree.links.new(light_node.outputs['Vertex Color'], light_sun_node.inputs['Color1'])
+                    node_tree.links.new(sun_node.outputs['Vertex Color'], light_sun_node.inputs['Color2'])
 
                 b_mesh.to_mesh(bpy_mesh)
                 loaded_visuals[visual_key] = bpy_mesh.name
