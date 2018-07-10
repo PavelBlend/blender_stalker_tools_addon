@@ -4,6 +4,7 @@ import time
 import bpy
 
 from .. import ogf
+from .. import types
 from . import importer
 from . import format_
 from . import geom
@@ -14,9 +15,10 @@ except ImportError:
     pass
 
 
-def sector_root(data):
+def sector_root(data, sector_):
     packed_reader = xray_io.PackedReader(data)
     root = packed_reader.getf('I')[0]
+    sector_.root = root
 
 
 def sector_portal(data):
@@ -28,19 +30,22 @@ def sector_portal(data):
 
 def sector(data):
     chunked_reader = xray_io.ChunkedReader(data)
+    sector_ = types.Sector()
     for chunk_id, chunk_data in chunked_reader:
         if chunk_id == format_.Chunks.Sector.PORTALS:
             sector_portal(chunk_data)
         elif chunk_id == format_.Chunks.Sector.ROOT:
-            sector_root(chunk_data)
+            sector_root(chunk_data, sector_)
         else:
             print('UNKNOW LEVEL SECTOR CHUNK: {0:#x}'.format(chunk_id))
+    return sector_
 
 
-def sectors(data):
+def sectors(data, level):
     chunked_reader = xray_io.ChunkedReader(data)
     for sector_id, sector_data in chunked_reader:
-        sector(sector_data)
+        sector_ = sector(sector_data)
+        level.sectors.append(sector_)
 
 
 def glows(data):
@@ -151,7 +156,7 @@ def main(data, level):
             glows(chunk_data)
 
         elif chunk_id == format_.Chunks.Level.SECTORS:
-            sectors(chunk_data)
+            sectors(chunk_data, level)
 
         else:
             print('UNKNOW LEVEL CHUNK: {0:#x}'.format(chunk_id))

@@ -318,7 +318,30 @@ def import_visuals(level):
         else:
             bpy_object = bpy.data.objects.new(visual.type, None)
             bpy.context.scene.objects.link(bpy_object)
+            if visual.type == 'LOD':
+                bpy_object.empty_draw_size = 3.0
+                bpy_object.empty_draw_type = 'SPHERE'
             imported_visuals_names[visual_index] = bpy_object.name
             for child in visual.children_l:
                 bpy_child_object = bpy.data.objects[imported_visuals_names[child]]
+                if visual.type == 'LOD':
+                    bpy_object.location = bpy_child_object.location
+                    bpy_object.rotation_euler = bpy_child_object.rotation_euler
+                    bpy_object.scale = bpy_child_object.scale
+                    bpy_child_object.location = 0, 0, 0
+                    bpy_child_object.rotation_euler = 0, 0, 0
+                    bpy_child_object.scale = 1, 1, 1
                 bpy_child_object.parent = bpy_object
+
+    root_level_object = bpy.data.objects.new('level', None)
+    bpy.context.scene.objects.link(root_level_object)
+    root_sectors_object = bpy.data.objects.new('sectors', None)
+    bpy.context.scene.objects.link(root_sectors_object)
+    root_sectors_object.parent = root_level_object
+
+    for sector_index, sector in enumerate(level.sectors):
+        bpy_object = bpy.data.objects.new('sector_{0:0>2}'.format(sector_index), None)
+        bpy.context.scene.objects.link(bpy_object)
+        bpy_object.parent = root_sectors_object
+        root_bpy_object = bpy.data.objects[imported_visuals_names[sector.root]]
+        root_bpy_object.parent = bpy_object

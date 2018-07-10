@@ -1,4 +1,8 @@
 
+class Sector:
+    def __init__(self):
+        self.root = None
+
 class Level:
     def __init__(self):
         self.file_path = None
@@ -11,6 +15,7 @@ class Level:
         self.lmaps = []
         self.lmaps_0 = []
         self.lmaps_1 = []
+        self.sectors = []
 
 
 class VertexBuffer:
