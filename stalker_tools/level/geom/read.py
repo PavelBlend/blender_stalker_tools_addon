@@ -2,7 +2,8 @@
 import time
 
 from ... import types
-from .. import format_
+from .. import format_ as format_level
+from . import format_
 from .. import read
 
 try:
@@ -117,20 +118,20 @@ def main(data, level, fastpath=False):
 
     for chunk_id, chunk_data in chunked_reader:
 
-        if chunk_id == format_.Chunks.Level.HEADER:
+        if chunk_id == format_level.Chunks.Level.HEADER:
             read.header(chunk_data)
 
-        elif chunk_id == format_.Chunks.Geometry.VB:
+        elif chunk_id == format_level.Chunks.Geometry.VB:
             st = time.time()
             vertex_buffers(chunk_data, level, fastpath)
             print('Load VB:', time.time() - st)
 
-        elif chunk_id == format_.Chunks.Geometry.IB:
+        elif chunk_id == format_level.Chunks.Geometry.IB:
             st = time.time()
             indices_buffers(chunk_data, level, fastpath)
             print('Load IB:', time.time() - st)
 
-        elif chunk_id == format_.Chunks.Geometry.SWIS:
+        elif chunk_id == format_level.Chunks.Geometry.SWIS:
             st = time.time()
             slide_windows_indices(chunk_data, level, fastpath)
             print('Load SWIS:', time.time() - st)

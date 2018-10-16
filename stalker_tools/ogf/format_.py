@@ -20,6 +20,7 @@ class Chunks:
     FASTPATH = 0x16
 
 
+# model types
 NORMAL = 'NORMAL'
 HIERRARHY = 'HIERRARHY'
 PROGRESSIVE = 'PROGRESSIVE'
@@ -48,6 +49,7 @@ model_types = {
     0xb: TREE_PM
 }
 
+# vertex formats
 OGF_VERTEXFORMAT_FVF = 0x112
 OGF4_VERTEXFORMAT_FVF_1L = 0x12071980
 OGF4_VERTEXFORMAT_FVF_2L = 0x240e3300

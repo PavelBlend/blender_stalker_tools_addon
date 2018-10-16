@@ -515,10 +515,8 @@ def main(data, ogf=False, root=None, child=False):
 
 
 def file(file_path):
-    file = open(file_path, 'rb')
-    data = file.read()
-    file.close()
-    if file:
+    with open(file_path, 'rb') as file_:
+        data = file_.read()
         root_object_name = os.path.splitext(os.path.basename(file_path))[0]
         root_object = importer.import_root_object(root_object_name)
-    main(data, ogf=True, root=root_object)
+        main(data, ogf=True, root=root_object)
