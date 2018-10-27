@@ -20,7 +20,12 @@ class Chunks:
 
 
 # format versions
+XRLC_VERSION_13 = 13
 XRLC_VERSION_14 = 14
+XRLC_SUPPORT_VERSIONS = [
+    XRLC_VERSION_13,
+    XRLC_VERSION_14
+]
 
 # others
 PORTAL_SIZE = 80
