@@ -407,7 +407,7 @@ def import_visuals(level):
                 bpy_object.rotation_euler = -rotate[0], -rotate[2], -rotate[1]
 
             # import fast path geometry
-            if visual.fastpath:
+            if visual.fastpath and level.has_geomx:
                 b_mesh = bmesh.new()
                 bpy_mesh = bpy.data.meshes.new('FASTPATH')
 

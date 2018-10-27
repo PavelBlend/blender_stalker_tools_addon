@@ -1,5 +1,6 @@
 
 import time
+import os
 
 import bpy
 
@@ -192,8 +193,13 @@ def file(file_path):
     start_time = time.time()
     level = types.Level()
     geom.read.file(file_path + '.geom', level)
-    geom.read.file(file_path + '.geomx', level, fastpath=True)
+    geomx_path = file_path + '.geomx'
+    has_geomx = False
+    if os.path.exists(geomx_path):
+        has_geomx = True
+        geom.read.file(geomx_path, level, fastpath=True)
     level.file_path = file_path
+    level.has_geomx = has_geomx
     print('Load Geom:', time.time() - start_time)
 
     with open(file_path, 'rb') as file_:
