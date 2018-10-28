@@ -147,34 +147,45 @@ def header(data):
     xrlc_quality = packed_reader.getf('H')[0]
     if xrlc_version not in format_.XRLC_SUPPORT_VERSIONS:
         raise Exception('UNSUPPORTED FORMAT VERSION: {}'.format(xrlc_version))
+    return xrlc_version
 
 
 def _root(data, level):
     start_time = time.time()
     chunked_reader = xray_io.ChunkedReader(data)
 
-    chunk_data = chunked_reader.next(format_.Chunks.Level.HEADER)
-    header(chunk_data)
+    chunk_data = chunked_reader.next(format_.Chunks.HEADER)
+    xrlc_version = header(chunk_data)
+    chunks = format_.CHUNKS_TABLE[xrlc_version]
 
     for chunk_id, chunk_data in chunked_reader:
 
-        if chunk_id == format_.Chunks.Level.SHADERS:
+        if chunk_id == chunks.SHADERS:
             _shaders(chunk_data, level)
 
-        elif chunk_id == format_.Chunks.Level.VISUALS:
+        elif chunk_id == chunks.VISUALS:
             visuals_chunk_data = chunk_data
 
-        elif chunk_id == format_.Chunks.Level.PORTALS:
+        elif chunk_id == chunks.PORTALS:
             _portals(chunk_data)
 
-        elif chunk_id == format_.Chunks.Level.LIGHT_DYNAMIC:
+        elif chunk_id == chunks.LIGHT_DYNAMIC:
             _light_dynamic(chunk_data)
 
-        elif chunk_id == format_.Chunks.Level.GLOWS:
+        elif chunk_id == chunks.GLOWS:
             _glows(chunk_data)
 
-        elif chunk_id == format_.Chunks.Level.SECTORS:
+        elif chunk_id == chunks.SECTORS:
             _sectors(chunk_data, level)
+
+        elif chunk_id == chunks.VB:
+            geom.read.vertex_buffers(chunk_data, level)
+
+        elif chunk_id == chunks.IB:
+            geom.read.indices_buffers(chunk_data, level)
+
+        elif chunk_id == chunks.SWIS:
+            geom.read.slide_windows_indices(chunk_data, level)
 
         else:
             print('UNKNOW LEVEL CHUNK: {0:#x}'.format(chunk_id))

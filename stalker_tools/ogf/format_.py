@@ -4,6 +4,8 @@ class Chunks:
     TEXTURE = 0x2
     VERTICES = 0x3
     INDICES = 0x4
+    VCONTAINER = 0x7
+    ICONTAINER = 0x8
     SWIDATA = 0x6
     CHILDREN = 0x9
     CHILDREN_L = 0xa

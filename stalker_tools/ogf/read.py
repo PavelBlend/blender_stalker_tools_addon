@@ -334,6 +334,40 @@ def swidata(data, visual, fast_path=False):
         visual.fastpath.swidata = swis
 
 
+def icontainer(data, visual):
+    if not visual.gcontainer:
+        visual.gcontainer = types.GeometryContainer()
+
+    packed_reader = xray_io.PackedReader(data)
+
+    ib_index = packed_reader.getf('I')[0]
+    ib_offset = packed_reader.getf('I')[0]
+    ib_size = packed_reader.getf('I')[0]
+
+    gcontainer = visual.gcontainer
+
+    gcontainer.ib_index = ib_index
+    gcontainer.ib_offset = ib_offset
+    gcontainer.ib_size = ib_size
+
+
+def vcontainer(data, visual):
+    if not visual.gcontainer:
+        visual.gcontainer = types.GeometryContainer()
+
+    packed_reader = xray_io.PackedReader(data)
+
+    vb_index = packed_reader.getf('I')[0]
+    vb_offset = packed_reader.getf('I')[0]
+    vb_size = packed_reader.getf('I')[0]
+
+    gcontainer = visual.gcontainer
+
+    gcontainer.vb_index = vb_index
+    gcontainer.vb_offset = vb_offset
+    gcontainer.vb_size = vb_size
+
+
 def indices(data, visual):
     packed_reader = xray_io.PackedReader(data)
     indices_count = packed_reader.getf('I')[0]
@@ -462,6 +496,12 @@ def main(data, ogf=False, root=None, child=False):
 
         elif chunk_id == format_.Chunks.INDICES:
             indices(chunk_data, visual)
+
+        elif chunk_id == format_.Chunks.VCONTAINER:
+            vcontainer(chunk_data, visual)
+
+        elif chunk_id == format_.Chunks.ICONTAINER:
+            icontainer(chunk_data, visual)
 
         elif chunk_id == format_.Chunks.SWIDATA:
             swidata(chunk_data, visual)
