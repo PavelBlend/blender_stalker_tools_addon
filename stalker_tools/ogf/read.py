@@ -4,6 +4,7 @@ import os
 from .. import types
 from . import importer
 from . import format_
+from . import version_3
 
 try:
     from io_scene_xray import xray_io
@@ -464,7 +465,7 @@ def header(data, visual):
     packed_reader = xray_io.PackedReader(data)
 
     ogf_version = packed_reader.getf('B')[0]
-    if ogf_version != 4:
+    if ogf_version not in (3, 4):
         raise BaseException('Unsupported format version: {0}'.format(ogf_version))
 
     model_type = packed_reader.getf('B')[0]
@@ -473,8 +474,13 @@ def header(data, visual):
         bbox(packed_reader)
         bsphere(packed_reader)
 
-    visual.type = format_.model_types[model_type]
+    if format_.model_types.get(model_type, None):
+        visual.type = format_.model_types[model_type]
+    else:
+        visual.type = 'UNKNOWN'
     visual.shader_id = shader_id
+
+    return ogf_version
 
 
 def main(data, ogf=False, root=None, child=False):
@@ -482,76 +488,92 @@ def main(data, ogf=False, root=None, child=False):
     visual = types.Visual()
     visual.root_object = root
 
+    chunks = {}
     for chunk_id, chunk_data in chunked_reader:
-        visual.chunks.append(hex(chunk_id))
+        chunks[chunk_id] = chunk_data
 
-        if chunk_id == format_.Chunks.HEADER:
-            header(chunk_data, visual)
+    header_data = chunks.get(format_.Chunks.HEADER)
+    format_version = header(header_data, visual)
 
-        elif chunk_id == format_.Chunks.TEXTURE:
-            texture(chunk_data, visual)
+    if format_version == 4:
+        if chunks.get(format_.Chunks.S_BONE_NAMES):
+            bone_names_data = chunks.get(format_.Chunks.S_BONE_NAMES)
+            bones = s_bone_names(bone_names_data)
 
-        elif chunk_id == format_.Chunks.VERTICES:
-            vertices(chunk_data, visual)
+        for chunk_id, chunk_data in chunks.items():
+            visual.chunks.append(hex(chunk_id))
 
-        elif chunk_id == format_.Chunks.INDICES:
-            indices(chunk_data, visual)
+            if chunk_id == format_.Chunks.HEADER:
+                pass
 
-        elif chunk_id == format_.Chunks.VCONTAINER:
-            vcontainer(chunk_data, visual)
+            elif chunk_id == format_.Chunks.TEXTURE:
+                texture(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.ICONTAINER:
-            icontainer(chunk_data, visual)
+            elif chunk_id == format_.Chunks.VERTICES:
+                vertices(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.SWIDATA:
-            swidata(chunk_data, visual)
+            elif chunk_id == format_.Chunks.INDICES:
+                indices(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.CHILDREN:
-            visual.children_visuals = children(chunk_data, visual)
+            elif chunk_id == format_.Chunks.VCONTAINER:
+                vcontainer(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.CHILDREN_L:
-            children_l(chunk_data, visual)
+            elif chunk_id == format_.Chunks.ICONTAINER:
+                icontainer(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.LODDEF2:
-            loddef2(chunk_data)
+            elif chunk_id == format_.Chunks.SWIDATA:
+                swidata(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.TREEDEF2:
-            treedef2(chunk_data, visual)
+            elif chunk_id == format_.Chunks.CHILDREN:
+                visual.children_visuals = children(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.S_BONE_NAMES:
-            bones = s_bone_names(chunk_data)
+            elif chunk_id == format_.Chunks.CHILDREN_L:
+                children_l(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.S_SMPARAMS:
-            s_smparams(chunk_data, visual)
+            elif chunk_id == format_.Chunks.LODDEF2:
+                loddef2(chunk_data)
 
-        elif chunk_id == format_.Chunks.S_IKDATA:
-            s_ikdata(chunk_data, visual, bones)
+            elif chunk_id == format_.Chunks.TREEDEF2:
+                treedef2(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.S_USERDATA:
-            s_userdata(chunk_data, visual)
+            elif chunk_id == format_.Chunks.S_SMPARAMS:
+                s_smparams(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.DESC:
-            desc(chunk_data, visual)
+            elif chunk_id == format_.Chunks.S_IKDATA:
+                s_ikdata(chunk_data, visual, bones)
 
-        elif chunk_id == format_.Chunks.S_MOTION_REFS_0:
-            s_motion_refs_0(chunk_data, visual)
+            elif chunk_id == format_.Chunks.S_USERDATA:
+                s_userdata(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.SWICONTAINER:
-            swicontainer(chunk_data, visual)
+            elif chunk_id == format_.Chunks.DESC:
+                desc(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.GCONTAINER:
-            gcontainer(chunk_data, visual)
+            elif chunk_id == format_.Chunks.S_MOTION_REFS_0:
+                s_motion_refs_0(chunk_data, visual)
 
-        elif chunk_id == format_.Chunks.FASTPATH:
-            fastpath(chunk_data, visual)
+            elif chunk_id == format_.Chunks.SWICONTAINER:
+                swicontainer(chunk_data, visual)
 
-        else:
-            print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
+            elif chunk_id == format_.Chunks.GCONTAINER:
+                gcontainer(chunk_data, visual)
 
-    if ogf and not child:
-        importer.import_visual(visual, root)
+            elif chunk_id == format_.Chunks.FASTPATH:
+                fastpath(chunk_data, visual)
 
-    return visual
+            else:
+                print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
+
+        if ogf and not child:
+            importer.import_visual(visual, root)
+
+        return visual
+
+    elif format_version == 3:
+        version_3.read.main(chunks, ogf=ogf, visual=visual, child=False)
+        if ogf and not child:
+            importer.import_visual(visual, root)
+
+        return visual
 
 
 def file(file_path):

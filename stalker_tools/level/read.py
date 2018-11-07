@@ -156,6 +156,7 @@ def _root(data, level):
 
     chunk_data = chunked_reader.next(format_.Chunks.HEADER)
     xrlc_version = header(chunk_data)
+    level.format_version = xrlc_version
     chunks = format_.CHUNKS_TABLE[xrlc_version]
 
     for chunk_id, chunk_data in chunked_reader:

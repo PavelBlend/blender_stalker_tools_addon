@@ -13,6 +13,7 @@ class FastPathGeom:
 
 class Level:
     def __init__(self):
+        self.format_version = None
         self.file_path = None
         self.vertex_buffers = []
         self.indices_buffers = []

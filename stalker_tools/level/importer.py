@@ -5,6 +5,8 @@ import bpy
 import bmesh
 import mathutils
 
+from . import format_
+
 from io_scene_xray import utils
 
 
@@ -63,10 +65,13 @@ def import_visuals(level):
     bpy_materials.append(None)    # first empty shader
     for material_index, texture in enumerate(level.materials):
         lmap = level.lmaps[material_index]
-        if not lmap:
-            abs_image_path = textures_folder + os.sep + texture + '.dds'
+        if level.format_version in {format_.XRLC_VERSION_13, format_.XRLC_VERSION_14}:
+            if not lmap:
+                abs_image_path = os.path.join(textures_folder, texture + '.dds')
+            else:
+                abs_image_path = os.path.join(os.path.dirname(level.file_path), + texture + '.dds')
         else:
-            abs_image_path = os.path.dirname(level.file_path) + os.sep + texture + '.dds'
+            abs_image_path = os.path.join(textures_folder, texture + '.dds')
         bpy_mat = bpy.data.materials.new(texture)
         bpy_mat.use_shadeless = True
         bpy_mat.use_transparency = True
@@ -81,9 +86,18 @@ def import_visuals(level):
         try:
             bpy_image = bpy.data.images.load(abs_image_path)
         except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
-            bpy_image = bpy.data.images.new(texture, 0, 0)
-            bpy_image.source = 'FILE'
-            bpy_image.filepath = abs_image_path
+            if level.format_version <= format_.XRLC_VERSION_12:
+                abs_image_path = os.path.join(os.path.dirname(level.file_path), texture + '.dds')
+                try:
+                    bpy_image = bpy.data.images.load(abs_image_path)
+                except RuntimeError:
+                    bpy_image = bpy.data.images.new(texture, 0, 0)
+                    bpy_image.source = 'FILE'
+                    bpy_image.filepath = abs_image_path
+            else:
+                bpy_image = bpy.data.images.new(texture, 0, 0)
+                bpy_image.source = 'FILE'
+                bpy_image.filepath = abs_image_path
 
         bpy_tex.image = bpy_image
         bpy_materials.append(bpy_mat)

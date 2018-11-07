@@ -1,5 +1,40 @@
 
 class Chunks:
+    class Version3:
+
+        class Hoppe:
+            HEADER = 0x1
+            VERT_SPLITS	= 0x2
+            FIX_FACES = 0x3
+
+        TEXTURE = 0x2
+        TEXTURE_L = 0x3
+        CHILD_REFS = 0x5
+        BBOX = 0x6
+        VERTICES = 0x7
+        INDICES = 0x8
+        LODDATA = 0x9
+        VCONTAINER = 0xa
+        BSPHERE = 0xb
+        CHILDREN_L = 0xc
+        S_BONE_NAMES = 0xd
+        S_MOTIONS = 0xe
+        DPATCH = 0xf
+        LODS = 0x10
+        CHILDREN = 0x11
+        S_SMPARAMS = 0x12
+        ICONTAINER = 0x13
+        S_SMPARAMS_NEW = 0x14
+        LODDEF2 = 0x15
+        TREEDEF2 = 0x16
+        S_IKDATA_0 = 0x17
+        S_USERDATA = 0x18
+        S_IKDATA = 0x19
+        S_MOTIONS_NEW = 0x1a
+        S_DESC = 0x1b
+        S_IKDATA_2 = 0x1C
+        S_MOTION_REFS = 0x1D
+
     HEADER = 0x1
     TEXTURE = 0x2
     VERTICES = 0x3

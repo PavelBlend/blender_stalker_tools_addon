@@ -115,23 +115,23 @@ def vertex_buffers(data, level, fastpath=False):
 def main(data, level, fastpath=False):
 
     chunked_reader = xray_io.ChunkedReader(data)
+    chunk_data = chunked_reader.next(format_level.Chunks.HEADER)
+    xrlc_version = read.header(chunk_data)
+    chunks = format_level.CHUNKS_TABLE[xrlc_version]
 
     for chunk_id, chunk_data in chunked_reader:
 
-        if chunk_id == format_level.Chunks.Level.HEADER:
-            read.header(chunk_data)
-
-        elif chunk_id == format_level.Chunks.Geometry.VB:
+        if chunk_id == chunks.VB:
             st = time.time()
             vertex_buffers(chunk_data, level, fastpath)
             print('Load VB:', time.time() - st)
 
-        elif chunk_id == format_level.Chunks.Geometry.IB:
+        elif chunk_id == chunks.IB:
             st = time.time()
             indices_buffers(chunk_data, level, fastpath)
             print('Load IB:', time.time() - st)
 
-        elif chunk_id == format_level.Chunks.Geometry.SWIS:
+        elif chunk_id == chunks.SWIS:
             st = time.time()
             slide_windows_indices(chunk_data, level, fastpath)
             print('Load SWIS:', time.time() - st)

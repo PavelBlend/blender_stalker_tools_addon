@@ -306,7 +306,7 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 uv_index += 3    # skip 3 face loops
 
         textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
-        abs_image_path = textures_folder + os.sep + visual.texture + '.dds'
+        abs_image_path = os.path.join(textures_folder, visual.texture + '.dds')
         bpy_mat = bpy.data.materials.new(visual.texture)
         bpy_mat.use_shadeless = True
         bpy_mat.use_transparency = True
@@ -342,6 +342,6 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 bone_name = root_visual.bones_names[bone_index]
                 vertex_group = bpy_object.vertex_groups[bone_name]
                 vertex_group.add([remap_indices[vertex_index], ], vertex_weght, type='REPLACE')
-        if getattr(visual, 'armature'):
+        if getattr(visual, 'armature', None):
             armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
             armature_modifier.object = visual.armature
