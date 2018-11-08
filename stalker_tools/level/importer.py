@@ -69,7 +69,7 @@ def import_visuals(level):
             if not lmap:
                 abs_image_path = os.path.join(textures_folder, texture + '.dds')
             else:
-                abs_image_path = os.path.join(os.path.dirname(level.file_path), + texture + '.dds')
+                abs_image_path = os.path.join(os.path.dirname(level.file_path), texture + '.dds')
         else:
             abs_image_path = os.path.join(textures_folder, texture + '.dds')
         bpy_mat = bpy.data.materials.new(texture)
