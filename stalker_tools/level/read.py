@@ -106,7 +106,7 @@ def _visuals(data, level):
         level.visuals.append(visual)
 
 
-def _shaders(data, level):
+def _shaders_v13(data, level):
     packed_reader = xray_io.PackedReader(data)
     shaders_count = packed_reader.getf('I')[0]
     empty_shader = packed_reader.gets()
@@ -141,6 +141,26 @@ def _shaders(data, level):
         level.shaders.append(engine_shader)
 
 
+class ShaderV8:
+    def __init__(self):
+        self.shader = None
+        self.light_map = None
+
+
+def _shaders_v8(data, level):
+    packed_reader = xray_io.PackedReader(data)
+    shaders_count = packed_reader.getf('I')[0]
+
+    for shader_index in range(shaders_count):
+        raw_string = packed_reader.gets()
+        shader = ShaderV8()
+        if ',' in raw_string:
+            shader.shader, shader.light_map = raw_string.split(',')
+        else:
+            shader.shader = raw_string
+        level.shaders.append(shader)
+
+
 def header(data):
     packed_reader = xray_io.PackedReader(data)
     xrlc_version = packed_reader.getf('H')[0]
@@ -162,7 +182,10 @@ def _root(data, level):
     for chunk_id, chunk_data in chunked_reader:
 
         if chunk_id == chunks.SHADERS:
-            _shaders(chunk_data, level)
+            if level.format_version <= format_.XRLC_VERSION_11:
+                _shaders_v8(chunk_data, level)
+            else:
+                _shaders_v13(chunk_data, level)
 
         elif chunk_id == chunks.VISUALS:
             visuals_chunk_data = chunk_data

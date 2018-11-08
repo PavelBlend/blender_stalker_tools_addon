@@ -26,10 +26,12 @@ class Chunks:
 
 
 # format versions
+XRLC_VERSION_11 = 11
 XRLC_VERSION_12 = 12
 XRLC_VERSION_13 = 13
 XRLC_VERSION_14 = 14
 XRLC_SUPPORT_VERSIONS = [
+    XRLC_VERSION_11,
     XRLC_VERSION_12,
     XRLC_VERSION_13,
     XRLC_VERSION_14
@@ -42,6 +44,7 @@ LIGHT_DYNAMIC_SIZE = 108
 GLOW_SIZE = 18
 SECTOR_PORTAL_SIZE = 2
 CHUNKS_TABLE = {
+    11: Chunks.LevelVersion12,
     12: Chunks.LevelVersion12,
     13: Chunks.LevelVersion13,
     14: Chunks.LevelVersion14

@@ -50,6 +50,10 @@ def indices_buffers(data, level, fastpath=False):
 def vertex_buffers(data, level, fastpath=False):
     packed_reader = xray_io.PackedReader(data)
     vertex_buffers_count = packed_reader.getf('I')[0]
+    if level.format_version > format_level.XRLC_VERSION_12:
+        uv_coefficient = 2048
+    else:
+        uv_coefficient = 1024
     for vertex_buffer_index in range(vertex_buffers_count):
         usage_list = []
         vertex_buffer = types.VertexBuffer()
@@ -92,7 +96,7 @@ def vertex_buffers(data, level, fastpath=False):
                             vertex_buffer.uv_lmap.append((lmap_u / (2 ** 15 - 1), 1 - lmap_v / (2 ** 15 - 1)))
                     elif format_.types[type] == format_.SHORT4:
                         coord_u, coord_v = packed_reader.getf('2h')
-                        vertex_buffer.uv.append((coord_u / 2048, 1 - coord_v / 2048))
+                        vertex_buffer.uv.append((coord_u / uv_coefficient, 1 - coord_v / uv_coefficient))
                         shader_data, unused = packed_reader.getf('2H')
                     else:
                         print('UNKNOWN VERTEX BUFFER TYPE:', type)

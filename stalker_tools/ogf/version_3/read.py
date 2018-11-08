@@ -158,8 +158,8 @@ def bbox(data, visual):
 
 def texture_l(data, visual):
     packed_reader = xray_io.PackedReader(data)
-    texture_l = packed_reader.getf('I')[0]
-    shader_l = packed_reader.getf('I')[0]
+    visual.texture_l = packed_reader.getf('I')[0]
+    visual.shader_l = packed_reader.getf('I')[0]
 
 
 def main(chunks, ogf=True, visual=None, child=False):

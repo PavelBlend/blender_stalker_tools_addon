@@ -112,3 +112,5 @@ class Visual:
         self.partitions = []
         self.children_l = []
         self.fastpath = None
+        self.texture_l = None
+        self.shader_l = None
