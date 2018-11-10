@@ -217,6 +217,24 @@ def _root(data, level):
     print('Load Level', time.time() - start_time)
 
     start_time = time.time()
+
+    geom_path = level.file_path + '.geom'
+    has_geom = False
+    if os.path.exists(geom_path):
+        has_geom = True
+        geom.read.file(geom_path, level)
+
+    geomx_path = level.file_path + '.geomx'
+    has_geomx = False
+    if os.path.exists(geomx_path):
+        has_geomx = True
+        geom.read.file(geomx_path, level, fastpath=True)
+
+    level.has_geomx = has_geomx
+
+    print('Load Geom:', time.time() - start_time)
+
+    start_time = time.time()
     _visuals(visuals_chunk_data, level)
     print('Load Visuals', time.time() - start_time)
     start_time = time.time()
@@ -225,24 +243,8 @@ def _root(data, level):
 
 
 def file(file_path):
-    start_time = time.time()
     level = types.Level()
-
-    geom_path = file_path + '.geom'
-    has_geom = False
-    if os.path.exists(geom_path):
-        has_geom = True
-        geom.read.file(geom_path, level)
-
-    geomx_path = file_path + '.geomx'
-    has_geomx = False
-    if os.path.exists(geomx_path):
-        has_geomx = True
-        geom.read.file(geomx_path, level, fastpath=True)
-
     level.file_path = file_path
-    level.has_geomx = has_geomx
-    print('Load Geom:', time.time() - start_time)
 
     with open(file_path, 'rb') as file_:
         data = file_.read()
