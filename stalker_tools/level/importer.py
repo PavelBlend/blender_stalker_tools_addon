@@ -529,8 +529,13 @@ def import_visuals(level):
     bpy.context.scene.objects.link(root_sectors_object)
     root_sectors_object.parent = root_level_object
 
+    default_sector_index = len(level.sectors) - 1
     for sector_index, sector in enumerate(level.sectors):
-        bpy_object = bpy.data.objects.new('sector_{0:0>2}'.format(sector_index), None)
+        if sector_index == default_sector_index:
+            sector_object_name = 'sector_default'
+        else:
+            sector_object_name = 'sector_{0:0>2}'.format(sector_index)
+        bpy_object = bpy.data.objects.new(sector_object_name, None)
         bpy.context.scene.objects.link(bpy_object)
         bpy_object.parent = root_sectors_object
         root_bpy_object = bpy.data.objects[imported_visuals_names[sector.root]]
