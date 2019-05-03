@@ -22,9 +22,10 @@ def _sector_root(data, sector):
     sector.root = root
 
 
-def _sector_portal(data):
+def _sector_portal(data, sector):
     packed_reader = xray_io.PackedReader(data)
     portal_count = len(data) // format_.SECTOR_PORTAL_SIZE
+    sector.portal_count = portal_count
 
     for portal_index in range(portal_count):
         portal = packed_reader.getf('H')[0]
@@ -37,7 +38,7 @@ def _sector(data):
     for chunk_id, chunk_data in chunked_reader:
 
         if chunk_id == format_.Chunks.Sector.PORTALS:
-            _sector_portal(chunk_data)
+            _sector_portal(chunk_data, sector)
         elif chunk_id == format_.Chunks.Sector.ROOT:
             _sector_root(chunk_data, sector)
         else:

@@ -2,6 +2,7 @@
 class Sector:
     def __init__(self):
         self.root = None
+        self.portal_count = 0
 
 
 class FastPathGeom:
