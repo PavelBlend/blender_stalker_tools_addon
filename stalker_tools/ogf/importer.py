@@ -29,13 +29,12 @@ def import_root_object(root_object_name):
     return root_object
 
 
-def import_bones(visual, root_object, root_visual):
+def import_bones(visual):
     bpy_armature = bpy.data.armatures.new('armature')
     bpy_armature.draw_type = 'STICK'
     bpy_object = bpy.data.objects.new('armature', bpy_armature)
     bpy_object.show_x_ray = True
     bpy_object.xray.isroot = False
-    bpy_object.parent = root_object
     bpy.context.scene.objects.link(bpy_object)
     bpy.context.scene.objects.active = bpy_object
     bpy.ops.object.mode_set(mode='EDIT')
@@ -104,32 +103,6 @@ def crete_vertex_groups(visual, bpy_object, root_visual):
 
 
 def import_visual(visual, root_object, child=False, root_visual=None):
-
-    if visual.swidata:
-        root_object.xray.flags_simple = 'pd'
-
-    if not child:
-        root_object.xray.userdata = visual.user_data
-
-        root_object.xray.revision.owner = visual.owner_name
-        root_object.xray.revision.ctime = visual.creation_time
-        root_object.xray.revision.moder = visual.modif_name
-        root_object.xray.revision.mtime = visual.modified_time
-
-        if visual.motion_reference:
-            motion_references = root_object.xray.motionrefs_collection
-            for motion_reference in visual.motion_reference.split(','):
-                motion_references.add().name = motion_reference
-
-    if len(visual.bones):
-        bpy_armature_obj = import_bones(visual, root_object, root_visual)
-    else:
-        bpy_armature_obj = None
-
-    for child_visual in visual.children_visuals:
-        child_visual.armature = bpy_armature_obj
-        import_visual(child_visual, root_object, child=True, root_visual=visual)
-
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
         bpy_mesh = bpy.data.meshes.new(visual.type)
@@ -345,3 +318,42 @@ def import_visual(visual, root_object, child=False, root_visual=None):
         if getattr(visual, 'armature', None):
             armature_modifier = bpy_object.modifiers.new('Armature', 'ARMATURE')
             armature_modifier.object = visual.armature
+
+
+def set_xray_props_in_root_object(visual, root_object):
+    if visual.swidata:
+        root_object.xray.flags_simple = 'pd'
+
+    root_object.xray.userdata = visual.user_data
+
+    root_object.xray.revision.owner = visual.owner_name
+    root_object.xray.revision.ctime = visual.creation_time
+    root_object.xray.revision.moder = visual.modif_name
+    root_object.xray.revision.mtime = visual.modified_time
+
+    if visual.motion_reference:
+        motion_references = root_object.xray.motionrefs_collection
+        for motion_reference in visual.motion_reference.split(','):
+            motion_references.add().name = motion_reference
+
+
+def import_children_visuals(visual, root_obj):
+    for child_visual in visual.children_visuals:
+        if root_obj.type == 'ARMATURE':
+            child_visual.armature = root_obj
+        import_visual(child_visual, root_obj, child=True, root_visual=visual)
+
+
+def import_ogf(visual):
+    if len(visual.bones):
+        arm_obj = import_bones(visual)
+        set_xray_props_in_root_object(visual, arm_obj)
+        import_children_visuals(visual, arm_obj)
+    else:
+        if len(visual.children_visuals):
+            root_object_name = os.path.splitext(os.path.basename(visual.file_path))[0]
+            root_object = import_root_object(root_object_name)
+            set_xray_props_in_root_object(visual, root_object)
+            import_children_visuals(visual, root_object)
+        else:
+            import_visual(visual, None)

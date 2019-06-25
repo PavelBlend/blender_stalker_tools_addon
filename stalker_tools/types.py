@@ -87,6 +87,7 @@ class Visual:
             self.bones_names = []
 
     def __init__(self):
+        self.file_path = None
         self.type = None
         self.shader_id = None
         self.gcontainer = None

@@ -308,7 +308,7 @@ def children(data, visual):
     chunked_reader = xray_io.ChunkedReader(data)
     children_visuals = []
     for child_id, child_data in chunked_reader:
-        child_visual = main(child_data, ogf=True, root=visual.root_object, child=True)
+        child_visual = main(child_data, ogf=True, child=True)
         children_visuals.append(child_visual)
     return children_visuals
 
@@ -483,10 +483,10 @@ def header(data, visual):
     return ogf_version
 
 
-def main(data, ogf=False, root=None, child=False):
+def main(data, file_path=None, ogf=False, child=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
-    visual.root_object = root
+    visual.file_path = file_path
 
     chunks = {}
     for chunk_id, chunk_data in chunked_reader:
@@ -564,14 +564,14 @@ def main(data, ogf=False, root=None, child=False):
                 print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))
 
         if ogf and not child:
-            importer.import_visual(visual, root)
+            importer.import_ogf(visual)
 
         return visual
 
     elif format_version == 3:
         version_3.read.main(chunks, ogf=ogf, visual=visual, child=False)
         if ogf and not child:
-            importer.import_visual(visual, root)
+            importer.import_ogf(visual)
 
         return visual
 
@@ -579,6 +579,4 @@ def main(data, ogf=False, root=None, child=False):
 def file(file_path):
     with open(file_path, 'rb') as file_:
         data = file_.read()
-        root_object_name = os.path.splitext(os.path.basename(file_path))[0]
-        root_object = importer.import_root_object(root_object_name)
-        main(data, ogf=True, root=root_object)
+        main(data, file_path, ogf=True)
