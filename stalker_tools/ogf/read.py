@@ -483,10 +483,10 @@ def header(data, visual):
     return ogf_version
 
 
-def main(data, file_path=None, ogf=False, child=False):
+def main(data, file_name=None, ogf=False, child=False):
     chunked_reader = xray_io.ChunkedReader(data)
     visual = types.Visual()
-    visual.file_path = file_path
+    visual.file_name = file_name
 
     chunks = {}
     for chunk_id, chunk_data in chunked_reader:
@@ -579,4 +579,5 @@ def main(data, file_path=None, ogf=False, child=False):
 def file(file_path):
     with open(file_path, 'rb') as file_:
         data = file_.read()
-        main(data, file_path, ogf=True)
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        main(data, file_name, ogf=True)

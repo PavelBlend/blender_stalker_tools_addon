@@ -30,9 +30,9 @@ def import_root_object(root_object_name):
 
 
 def import_bones(visual):
-    bpy_armature = bpy.data.armatures.new('armature')
+    bpy_armature = bpy.data.armatures.new(visual.file_name)
     bpy_armature.draw_type = 'STICK'
-    bpy_object = bpy.data.objects.new('armature', bpy_armature)
+    bpy_object = bpy.data.objects.new(visual.file_name, bpy_armature)
     bpy_object.show_x_ray = True
     bpy_object.xray.isroot = False
     bpy.context.scene.objects.link(bpy_object)
@@ -105,8 +105,14 @@ def crete_vertex_groups(visual, bpy_object, root_visual):
 def import_visual(visual, root_object, child=False, root_visual=None):
     if visual.vertices and visual.indices:
         b_mesh = bmesh.new()
-        bpy_mesh = bpy.data.meshes.new(visual.type)
-        bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
+        if root_visual:
+            file_name = root_visual.file_name
+            obj_name = '{0}_{1}'.format(file_name, visual.type)
+        else:
+            file_name = visual.file_name
+            obj_name = file_name
+        bpy_mesh = bpy.data.meshes.new(obj_name)
+        bpy_object = bpy.data.objects.new(obj_name, bpy_mesh)
         if root_object:
             bpy_object.parent = root_object
             bpy_object.xray.isroot = False
@@ -351,8 +357,7 @@ def import_ogf(visual):
         import_children_visuals(visual, arm_obj)
     else:
         if len(visual.children_visuals):
-            root_object_name = os.path.splitext(os.path.basename(visual.file_path))[0]
-            root_object = import_root_object(root_object_name)
+            root_object = import_root_object(visual.file_name)
             set_xray_props_in_root_object(visual, root_object)
             import_children_visuals(visual, root_object)
         else:
