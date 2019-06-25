@@ -23,9 +23,10 @@ def bsphere(packed_reader):
     radius = packed_reader.getf('f')[0]
 
 
-def bbox(packed_reader):
+def bbox(packed_reader, visual):
     bbox_min = packed_reader.getf('3f')
     bbox_max = packed_reader.getf('3f')
+    visual.bbox = (bbox_min, bbox_max)
 
 
 def fastpath(data, visual):
@@ -471,7 +472,7 @@ def header(data, visual):
     model_type = packed_reader.getf('B')[0]
     shader_id = packed_reader.getf('H')[0]
     if ogf_version == 4:
-        bbox(packed_reader)
+        bbox(packed_reader, visual)
         bsphere(packed_reader)
 
     if format_.model_types.get(model_type, None):

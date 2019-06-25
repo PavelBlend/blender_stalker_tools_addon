@@ -272,11 +272,18 @@ def import_visuals(level):
                 node_tree.links.new(ambient_node.outputs['Color'], light_maps_node.inputs['Color2'])
                 node_tree.links.new(light_maps_node.outputs['Color'], material_node.inputs['Color'])
 
+    sector_visual_ids = []
+    for sector in level.sectors:
+        sector_visual_ids.append(sector.root)
+
+    sector_visual_names = {}
+
     # Import meshes
     loaded_visuals = {}
     imported_visuals_names = {}
     level.bpy_materials = {}
     for visual_index, visual in enumerate(level.visuals):
+
         if visual.gcontainer:
             visual_key = '{0},{1},{2},{3},{4},{5}'.format(
                 visual.gcontainer.vb_index,
@@ -523,20 +530,70 @@ def import_visuals(level):
                     bpy_child_object.scale = 1, 1, 1
                 bpy_child_object.parent = bpy_object
 
+        for sector_index, sector_visual_index in enumerate(sector_visual_ids):
+            if sector_visual_index == visual_index:
+                sector_visual_names[sector_visual_index] = bpy_object.name, sector_index
+
+    sectors_bbox = {}
+
+    for sector_visual_index, (sector_visual_name, sector_index) in sector_visual_names.items():
+        children_bbox = []
+        sector_visual_obj = bpy.data.objects[sector_visual_name]
+
+        def append_child_bbox(obj):
+            for child_obj in obj.children:
+                if child_obj.type == 'MESH':
+                    children_bbox.append((child_obj.bound_box[0], child_obj.bound_box[6]))
+                append_child_bbox(child_obj)
+
+        append_child_bbox(sector_visual_obj)
+
+        min_bbox = [*children_bbox[0][0]]
+        max_bbox = [*children_bbox[0][1]]
+
+        for bbox_min, bbox_max in children_bbox:
+            if bbox_min[0] < min_bbox[0]:
+                min_bbox[0] = bbox_min[0]
+            if bbox_min[1] < min_bbox[1]:
+                min_bbox[1] = bbox_min[1]
+            if bbox_min[2] < min_bbox[2]:
+                min_bbox[2] = bbox_min[2]
+
+            if bbox_max[0] > max_bbox[0]:
+                max_bbox[0] = bbox_max[0]
+            if bbox_max[1] > max_bbox[1]:
+                max_bbox[1] = bbox_max[1]
+            if bbox_max[2] > max_bbox[2]:
+                max_bbox[2] = bbox_max[2]
+
+        sectors_bbox[sector_index] = (min_bbox, max_bbox)
+
+    min_bbox = sectors_bbox[0][0]
+    max_bbox = sectors_bbox[0][1]
+    max_bbox_sector_index = 0
+
+    for sector_index, (bbox_min, bbox_max) in sectors_bbox.items():
+        if bbox_min[0] < min_bbox[0] and \
+                bbox_min[1] < min_bbox[1] and \
+                bbox_min[2] < min_bbox[2] and \
+                bbox_max[0] > max_bbox[0] and \
+                bbox_max[1] > max_bbox[1] and \
+                bbox_max[2] > max_bbox[2]:
+            max_bbox_sector_index = sector_index
+
     root_level_object = bpy.data.objects.new('level', None)
     bpy.context.scene.objects.link(root_level_object)
     root_sectors_object = bpy.data.objects.new('sectors', None)
     bpy.context.scene.objects.link(root_sectors_object)
     root_sectors_object.parent = root_level_object
 
-    max_portal_count = max(level.sectors, key=lambda sector: sector.portal_count).portal_count
-    sector_index = 0
-    for sector in level.sectors:
-        if sector.portal_count == max_portal_count:
+    sector_name_index = 0
+    for sector_real_index, sector in enumerate(level.sectors):
+        if sector_real_index == max_bbox_sector_index:
             sector_object_name = 'sector_default'
         else:
-            sector_object_name = 'sector_{0:0>3}'.format(sector_index)
-            sector_index += 1
+            sector_object_name = 'sector_{0:0>3}'.format(sector_name_index)
+            sector_name_index += 1
         bpy_object = bpy.data.objects.new(sector_object_name, None)
         bpy.context.scene.objects.link(bpy_object)
         bpy_object.parent = root_sectors_object
