@@ -6,10 +6,80 @@ from . import importer
 from . import format_
 from . import version_3
 
+
 try:
     from io_scene_xray import xray_io
 except ImportError:
     pass
+
+
+FL_T_KEY_PRESENT = 1 << 0
+FL_R_KEY_ABSENT = 1 << 1
+KPF_T_HQ = 1 << 2
+
+
+def read_bone_motion(packed_reader, motion, bone_motion):
+    flags = packed_reader.getf('B')[0]
+    bone_motion.t_present = flags & FL_T_KEY_PRESENT
+    bone_motion.r_absent = flags & FL_R_KEY_ABSENT
+    bone_motion.hq = flags & KPF_T_HQ
+    rotate_keys = []
+    translate_keys = []
+
+    # rotation
+    if bone_motion.r_absent:
+        quaternion = packed_reader.getf('4h')
+        bone_motion.rotations.append(quaternion)
+    else:
+        motion_crc32 = packed_reader.getf('I')[0]
+        for key_index in range(motion.length):
+            quaternion = packed_reader.getf('4h')
+            bone_motion.rotations.append(quaternion)
+
+    # translation
+    bone_translation = types.BoneMotionTranslation()
+    if bone_motion.t_present:
+        motion_crc32 = packed_reader.getf('I')[0]
+        if bone_motion.hq:
+            for key_index in range(motion.length):
+                bone_translation.translate.append(packed_reader.getf('3h'))
+        else:
+            for key_index in range(motion.length):
+                bone_translation.translate.append(packed_reader.getf('3b'))
+        bone_translation.t_size = packed_reader.getf('3f')
+        bone_translation.t_init = packed_reader.getf('3f')
+    else:
+        bone_translation.translate.append(packed_reader.getf('3f'))
+    bone_motion.translations = bone_translation
+
+
+def read_motion(data, bones):
+    packed_reader = xray_io.PackedReader(data)
+    motion = types.Motion()
+    motion.name = packed_reader.gets()
+    motion.length = packed_reader.getf('I')[0]
+
+    for bone_name, _ in bones:
+        bone_motion = types.BoneMotion()
+        bone_motion.bone_name = bone_name
+        read_bone_motion(packed_reader, motion, bone_motion)
+        motion.bones_motion[bone_motion.bone_name] = bone_motion
+
+    return motion
+
+
+def s_motions(data, visual, bones):
+    chunked_reader = xray_io.ChunkedReader(data)
+    chunk_motion_count_data = chunked_reader.next(0)
+    motion_count_packed_reader = xray_io.PackedReader(chunk_motion_count_data)
+    motions_count = motion_count_packed_reader.getf('I')[0]
+    motions = {}
+
+    for chunk_id, chunk_data in chunked_reader:
+        motion = read_motion(chunk_data, bones)
+        motions[motion.name] = motion
+
+    return motions
 
 
 def ogf_color(packed_reader):
@@ -206,6 +276,7 @@ def motion_def(packed_reader):
 
 
 def s_smparams(data, visual):
+    return
     packed_reader = xray_io.PackedReader(data)
 
     params_version = packed_reader.getf('H')[0]
@@ -507,6 +578,9 @@ def main(data, file_name=None, ogf=False, child=False):
             if chunk_id == format_.Chunks.HEADER:
                 pass
 
+            elif chunk_id == format_.Chunks.S_BONE_NAMES:
+                pass
+
             elif chunk_id == format_.Chunks.TEXTURE:
                 texture(chunk_data, visual)
 
@@ -560,6 +634,9 @@ def main(data, file_name=None, ogf=False, child=False):
 
             elif chunk_id == format_.Chunks.FASTPATH:
                 fastpath(chunk_data, visual)
+
+            elif chunk_id == format_.Chunks.S_MOTIONS:
+                visual.motions = s_motions(chunk_data, visual, bones)
 
             else:
                 print('UNKNOW OGF CHUNK: {0:#x}'.format(chunk_id))

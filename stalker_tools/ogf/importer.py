@@ -1,4 +1,3 @@
-
 import math
 import os
 
@@ -19,6 +18,92 @@ MATRIX_BONE = mathutils.Matrix((
     (0.0, 0.0, 0.0, 1.0)
 )).freeze()
 MATRIX_BONE_INVERTED = MATRIX_BONE.inverted().freeze()
+
+
+def import_motions(visual, arm_obj):
+    for motion_name, motion in visual.motions.items():
+        act = bpy.data.actions.new(motion.name)
+        xray_motion = arm_obj.xray.motions_collection.add()
+        xray_motion.name = act.name
+        for bone_name, bone_motion in motion.bones_motion.items():
+            bpy_bone = arm_obj.data.bones[bone_motion.bone_name]
+            bpy_bone_parent = bpy_bone.parent
+
+            translate_fcurves = []
+            for translate_index in range(3):
+                translate_fcurve = act.fcurves.new(
+                    'pose.bones["{}"].location'.format(bone_motion.bone_name),
+                    index=translate_index,
+                    action_group=bone_motion.bone_name
+                )
+                translate_fcurves.append(translate_fcurve)
+
+            rotate_fcurves = []
+            for rotate_index in range(3):
+                rotate_fcurve = act.fcurves.new(
+                    'pose.bones["{}"].rotation_euler'.format(bone_motion.bone_name),
+                    index=rotate_index,
+                    action_group=bone_motion.bone_name
+                )
+                rotate_fcurves.append(rotate_fcurve)
+
+            rotations = []
+            locations = []
+
+            for frame_index, quaternion in enumerate(bone_motion.rotations):
+                euler = mathutils.Quaternion((
+                    quaternion[3] / 0x7fff,
+                    quaternion[0] / 0x7fff,
+                    quaternion[1] / 0x7fff,
+                    -quaternion[2] / 0x7fff
+                )).to_euler('ZXY')
+                rotations.append(euler)
+
+            for frame_index, translate in enumerate(bone_motion.translations.translate):
+                location = []
+                for index, value in enumerate(translate):
+                    if bone_motion.t_present:
+                        value = value * bone_motion.translations.t_size[index] + bone_motion.translations.t_init[index]
+                    else:
+                        value = value
+                    if index == 2:
+                        value = -value
+                    location.append(value)
+                locations.append(location)
+
+            if len(rotations) > 1:
+                frames_count = len(rotations)
+            elif len(locations) > 1:
+                frames_count = len(locations)
+            else:
+                frames_count = 1
+
+            for frame_index in range(frames_count):
+                if len(rotations) == 1:
+                    rotation = rotations[0]
+                else:
+                    rotation = rotations[frame_index]
+
+                if len(locations) == 1:
+                    location = locations[0]
+                else:
+                    location = locations[frame_index]
+
+                xmat = bpy_bone.matrix_local.inverted()
+                if bpy_bone_parent:
+                    xmat *= bpy_bone_parent.matrix_local
+                else:
+                    xmat *= MATRIX_BONE
+
+                mat = xmat * mathutils.Matrix.Translation(location) * mathutils.Euler(rotation, 'ZXY').to_matrix().to_4x4()
+                trn = mat.to_translation()
+                rot = mat.to_euler('ZXY')
+
+                for i in range(3):
+                    translate_fcurves[i].keyframe_points.insert(frame_index, trn[i])
+
+                for i in range(3):
+                    rotate_fcurves[i].keyframe_points.insert(frame_index, rot[i])
 
 
 def import_root_object(root_object_name):
@@ -355,6 +440,8 @@ def import_ogf(visual):
         arm_obj = import_bones(visual)
         set_xray_props_in_root_object(visual, arm_obj)
         import_children_visuals(visual, arm_obj)
+        if visual.motions:
+            import_motions(visual, arm_obj)
     else:
         if len(visual.children_visuals):
             root_object = import_root_object(visual.file_name)

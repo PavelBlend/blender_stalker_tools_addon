@@ -1,3 +1,26 @@
+class BoneMotionTranslation:
+    def __init__(self):
+        self.translate = []
+        self.t_size = (1.0, 1.0, 1.0)
+        self.t_init = (0.0, 0.0, 0.0)
+
+
+class BoneMotion:
+    def __init__(self):
+        self.bone_name = None
+        self.t_present = None
+        self.r_absent = None
+        self.hq = None
+        self.rotations = []
+        self.translations = None
+
+
+class Motion:
+    def __init__(self):
+        self.name = None
+        self.length = None
+        self.bones_motion = {}
+
 
 class Sector:
     def __init__(self):
@@ -116,3 +139,4 @@ class Visual:
         self.fastpath = None
         self.texture_l = None
         self.shader_l = None
+        self.motions = None

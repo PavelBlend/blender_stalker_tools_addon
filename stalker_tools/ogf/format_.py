@@ -47,6 +47,7 @@ class Chunks:
     LODDEF2 = 0xb
     TREEDEF2 = 0xc
     S_BONE_NAMES = 0xd
+    S_MOTIONS = 0xe
     S_SMPARAMS = 0xf
     S_IKDATA = 0x10
     S_USERDATA = 0x11
