@@ -276,7 +276,6 @@ def motion_def(packed_reader):
 
 
 def s_smparams(data, visual):
-    return
     packed_reader = xray_io.PackedReader(data)
 
     params_version = packed_reader.getf('H')[0]
