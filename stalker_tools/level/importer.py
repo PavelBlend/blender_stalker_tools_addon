@@ -1,4 +1,3 @@
-
 import os
 import math
 
@@ -719,6 +718,8 @@ def import_visuals(level):
         bpy_material.xray.eshader = 'default'
         bpy_materials[material_index] = bpy_material
 
+    cform_group = bpy.data.groups.new('{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), 'CFORM'))
+
     for sector_index, vertices in sector_vertices.items():
         remap_triangles = sector_remap_triangles[sector_index]
         triangles = []
@@ -727,7 +728,9 @@ def import_visuals(level):
             for vertex_index in triangle:
                 new_triangle.append(remap_triangles[vertex_index])
             triangles.append(new_triangle)
-        name = os.path.basename(os.path.dirname(level.file_path)) + '_cform_' + str(sector_index)
+        name = '{0}_cform_{1:0>3}'.format(
+            os.path.basename(os.path.dirname(level.file_path)), (sector_index)
+            )
         me = bpy.data.meshes.new(name)
         me.from_pydata(vertices, (), triangles)
         ob = bpy.data.objects.new(name, me)
@@ -743,3 +746,4 @@ def import_visuals(level):
         for triangle_index, material in enumerate(materials):
             bpy_material_index = remap_material_indices[material]
             me.polygons[triangle_index].material_index = bpy_material_index
+        cform_group.objects.link(ob)
