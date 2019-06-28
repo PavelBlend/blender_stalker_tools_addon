@@ -663,22 +663,20 @@ def import_visuals(level):
         root_bpy_object.parent = bpy_object
         sector_objects.append(bpy_object)
 
+    # level collision form
     cform = level.cform
-    '''if cform.vertices:
-        name = os.path.basename(os.path.dirname(level.file_path)) + '_level_cform'
-        me = bpy.data.meshes.new(name)
-        me.from_pydata(cform.vertices, (), cform.triangles)
-        ob = bpy.data.objects.new(name, me)
-        bpy.context.scene.objects.link(ob)
-        ob.parent = root_level_object'''
 
     sectors_triangles = {}
+    sectors_materials = {}
     for sector_index in cform.sectors_ids:
         sectors_triangles[sector_index] = []
+        sectors_materials[sector_index] = []
 
     for triangle_index, triangle in enumerate(cform.triangles):
         sector = cform.sectors[triangle_index]
         sectors_triangles[sector].append(triangle)
+        material = cform.materials[triangle_index]
+        sectors_materials[sector].append(material)
 
     sector_vertices = {}
     sector_remap_triangles = {}
@@ -696,6 +694,22 @@ def import_visuals(level):
                     vertex_index += 1
                     sector_vertices[sector_index].append(remap_vertex)
 
+    sector_unique_materials = {}
+    cform_unique_materials = set()
+    for sector_index, materials in sectors_materials.items():
+        unique_materials = set()
+        for material in materials:
+            unique_materials.add(material)
+            cform_unique_materials.add(material)
+        unique_materials = list(unique_materials)
+        unique_materials.sort()
+        sector_unique_materials[sector_index] = unique_materials
+
+    bpy_materials = {}
+    for material_index in cform_unique_materials:
+        bpy_material = bpy.data.materials.new(str(material_index))
+        bpy_materials[material_index] = bpy_material
+
     for sector_index, vertices in sector_vertices.items():
         remap_triangles = sector_remap_triangles[sector_index]
         triangles = []
@@ -710,3 +724,13 @@ def import_visuals(level):
         ob = bpy.data.objects.new(name, me)
         bpy.context.scene.objects.link(ob)
         ob.parent = sector_objects[sector_index]
+        materials = sector_unique_materials[sector_index]
+        remap_material_indices = {}
+        for bpy_material_index, material_index in enumerate(materials):
+            bpy_material = bpy_materials[material_index]
+            me.materials.append(bpy_material)
+            remap_material_indices[material_index] = bpy_material_index
+        materials = sectors_materials[sector_index]
+        for triangle_index, material in enumerate(materials):
+            bpy_material_index = remap_material_indices[material]
+            me.polygons[triangle_index].material_index = bpy_material_index
