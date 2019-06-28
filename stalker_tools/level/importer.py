@@ -649,6 +649,7 @@ def import_visuals(level):
     root_sectors_object.parent = root_level_object
 
     sector_name_index = 0
+    sector_objects = []
     for sector_real_index, sector in enumerate(level.sectors):
         if sector_real_index == max_bbox_sector_index:
             sector_object_name = 'sector_default'
@@ -660,3 +661,52 @@ def import_visuals(level):
         bpy_object.parent = root_sectors_object
         root_bpy_object = bpy.data.objects[imported_visuals_names[sector.root]]
         root_bpy_object.parent = bpy_object
+        sector_objects.append(bpy_object)
+
+    cform = level.cform
+    '''if cform.vertices:
+        name = os.path.basename(os.path.dirname(level.file_path)) + '_level_cform'
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(cform.vertices, (), cform.triangles)
+        ob = bpy.data.objects.new(name, me)
+        bpy.context.scene.objects.link(ob)
+        ob.parent = root_level_object'''
+
+    sectors_triangles = {}
+    for sector_index in cform.sectors_ids:
+        sectors_triangles[sector_index] = []
+
+    for triangle_index, triangle in enumerate(cform.triangles):
+        sector = cform.sectors[triangle_index]
+        sectors_triangles[sector].append(triangle)
+
+    sector_vertices = {}
+    sector_remap_triangles = {}
+    for sector_index, triangles in sectors_triangles.items():
+        sector_vertices[sector_index] = []
+        sector_remap_triangles[sector_index] = {}
+        remap_vertex_indices = {}
+        vertex_index = 0
+        for triangle in triangles:
+            for index, triangle_vertex_index in enumerate(triangle):
+                if not remap_vertex_indices.get(triangle_vertex_index, None):
+                    remap_vertex_indices[triangle_vertex_index] = vertex_index
+                    remap_vertex = cform.vertices[triangle_vertex_index]
+                    sector_remap_triangles[sector_index][triangle_vertex_index] = vertex_index
+                    vertex_index += 1
+                    sector_vertices[sector_index].append(remap_vertex)
+
+    for sector_index, vertices in sector_vertices.items():
+        remap_triangles = sector_remap_triangles[sector_index]
+        triangles = []
+        for triangle in sectors_triangles[sector_index]:
+            new_triangle = []
+            for vertex_index in triangle:
+                new_triangle.append(remap_triangles[vertex_index])
+            triangles.append(new_triangle)
+        name = os.path.basename(os.path.dirname(level.file_path)) + '_cform_' + str(sector_index)
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(vertices, (), triangles)
+        ob = bpy.data.objects.new(name, me)
+        bpy.context.scene.objects.link(ob)
+        ob.parent = sector_objects[sector_index]
