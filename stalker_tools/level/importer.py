@@ -464,10 +464,14 @@ def import_visuals(level):
                 b_mesh.to_mesh(bpy_mesh)
                 loaded_visuals[visual_key] = bpy_mesh.name
 
-                bpy_mesh.normals_split_custom_set_from_vertices(normals=normals)
-                bpy_mesh.use_auto_smooth = True
-                bpy_mesh.auto_smooth_angle = math.pi
-                debug = True
+                load_custom_normals = False
+
+                if load_custom_normals:
+                    bpy_mesh.normals_split_custom_set_from_vertices(normals=normals)
+                    bpy_mesh.use_auto_smooth = True
+                    bpy_mesh.auto_smooth_angle = math.pi
+
+                debug = False
 
                 if debug:
                     v_coords = []
