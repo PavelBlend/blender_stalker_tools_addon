@@ -7,8 +7,9 @@ import bmesh
 import mathutils
 
 from . import format_
+from .. import xr
 
-from io_scene_xray import utils
+from io_scene_xray import utils, plugin_prefs
 
 
 def create_material(level, texture, shader):
@@ -706,8 +707,16 @@ def import_visuals(level):
         sector_unique_materials[sector_index] = unique_materials
 
     bpy_materials = {}
+    gamemtl_path = plugin_prefs.get_preferences().gamemtl_file_auto
+    gamemtl_file = open(gamemtl_path, 'rb')
+    gamemtl_data = gamemtl_file.read()
+    gamemtl_file.close()
+    game_materials = xr.game_materials.parse_gamemtl(gamemtl_data)
     for material_index in cform_unique_materials:
-        bpy_material = bpy.data.materials.new(str(material_index))
+        game_material = game_materials[material_index]
+        bpy_material = bpy.data.materials.new(game_material)
+        bpy_material.xray.gamemtl = game_material
+        bpy_material.xray.eshader = 'default'
         bpy_materials[material_index] = bpy_material
 
     for sector_index, vertices in sector_vertices.items():
