@@ -509,6 +509,7 @@ def import_visuals(level):
 
             bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
+            imported_visuals_names[visual_index] = bpy_object.name
 
             if visual.tree_xform:
                 t = visual.tree_xform
@@ -589,7 +590,6 @@ def import_visuals(level):
             group = bpy.data.groups.new(group_name)
             object_groups[group_name] = group
         group.objects.link(bpy_object)
-        imported_visuals_names[visual_index] = bpy_object.name
 
         for sector_index, sector_visual_index in enumerate(sector_visual_ids):
             if sector_visual_index == visual_index:
