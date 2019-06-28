@@ -5,6 +5,8 @@ import bpy
 import bmesh
 import mathutils
 
+from ..utils import imp as imp_utils
+
 try:
     from io_scene_xray import utils
 except ImportError:
@@ -371,33 +373,40 @@ def import_visual(visual, root_object, child=False, root_visual=None):
 
         textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
         abs_image_path = os.path.join(textures_folder, visual.texture + '.dds')
-        bpy_mat = bpy.data.materials.new(visual.texture)
-        bpy_mat.use_shadeless = True
-        bpy_mat.use_transparency = True
-        bpy_mat.alpha = 0.0
-        bpy_tex = bpy.data.textures.new(visual.texture, type='IMAGE')
-        bpy_tex.type = 'IMAGE'
-        bpy_texture_slot = bpy_mat.texture_slots.add()
-        bpy_texture_slot.texture = bpy_tex
-        bpy_texture_slot.use_map_alpha = True
 
-        try:
-            bpy_image = bpy.data.images.load(abs_image_path)
-        except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
-            bpy_image = bpy.data.images.new(visual.texture, 0, 0)
-            bpy_image.source = 'FILE'
-            bpy_image.filepath = abs_image_path
+        bpy_mat = imp_utils.find_suitable_material(visual)
+        if not bpy_mat:
+            bpy_mat = bpy.data.materials.new(visual.texture)
+            bpy_mat.use_shadeless = True
+            bpy_mat.use_transparency = True
+            bpy_mat.alpha = 0.0
+            bpy_tex = imp_utils.find_suitable_texture(visual)
+            if not bpy_tex:
+                bpy_tex = bpy.data.textures.new(visual.texture, type='IMAGE')
+                bpy_tex.type = 'IMAGE'
+            bpy_texture_slot = bpy_mat.texture_slots.add()
+            bpy_texture_slot.texture = bpy_tex
+            bpy_texture_slot.use_map_alpha = True
 
-        bpy_tex.image = bpy_image
-        bpy_mat.xray.eshader = visual.shader
-        bpy_mat.xray.cshader = 'default'
-        bpy_mat.xray.gamemtl = 'default'
-        bpy_mat.xray.version = utils.plugin_version_number()
+            bpy_image = imp_utils.find_suitable_image(visual)
+            if not bpy_image:
+                try:
+                    bpy_image = bpy.data.images.load(abs_image_path)
+                except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
+                    bpy_image = bpy.data.images.new(visual.texture, 0, 0)
+                    bpy_image.source = 'FILE'
+                    bpy_image.filepath = abs_image_path
+
+            bpy_tex.image = bpy_image
+            bpy_mat.xray.eshader = visual.shader
+            bpy_mat.xray.cshader = 'default'
+            bpy_mat.xray.gamemtl = 'default'
+            bpy_mat.xray.version = utils.plugin_version_number()
+            bpy_mesh.use_auto_smooth = True
+            bpy_mesh.auto_smooth_angle = math.pi
+            bpy_mesh.show_edge_sharp = True
+
         bpy_mesh.materials.append(bpy_mat)
-        bpy_mesh.use_auto_smooth = True
-        bpy_mesh.auto_smooth_angle = math.pi
-        bpy_mesh.show_edge_sharp = True
-
         b_mesh.to_mesh(bpy_mesh)
 
         # assign weghts
