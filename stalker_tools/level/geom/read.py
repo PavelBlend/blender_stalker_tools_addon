@@ -6,6 +6,7 @@ from .. import format_ as format_level
 from . import format_
 from .. import read
 
+
 try:
     from io_scene_xray import xray_io
 except ImportError:
@@ -76,7 +77,13 @@ def vertex_buffers(data, level, fastpath=False):
                     coord_x, coord_y, coord_z = packed_reader.getf('3f')
                     vertex_buffer.position.append((coord_x, coord_z, coord_y))
                 elif format_.usage[usage] == format_.NORMAL:
-                    norm_x, norm_y, norm_z, norm_HZ = packed_reader.getf('4B')
+                    norm_x, norm_y, norm_z, hemi = packed_reader.getf('4B')
+                    vertex_buffer.normal.append((
+                        (2.0 * norm_z / 255.0 - 1.0),
+                        (2.0 * norm_x / 255.0 - 1.0),
+                        (2.0 * norm_y / 255.0 - 1.0)
+                    ))
+                    vertex_buffer.colors_hemi.append(hemi / 255)
                 elif format_.usage[usage] == format_.TEXCOORD:
                     if format_.types[type] == format_.FLOAT2:
                         if texcoord == 0:

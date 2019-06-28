@@ -1,5 +1,6 @@
 
 import os
+import math
 
 import bpy
 import bmesh
@@ -308,10 +309,12 @@ def import_visuals(level):
 
                 vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
                 vertices = vertex_buffer.position[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
+                normals = vertex_buffer.normal[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 uvs = vertex_buffer.uv[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 uvs_lmap = vertex_buffer.uv_lmap[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 colors_light = vertex_buffer.colors_light[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 colors_sun = vertex_buffer.colors_sun[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
+                colors_hemi = vertex_buffer.colors_hemi[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 for vertex in vertices:
                     b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
                 b_mesh.verts.ensure_lookup_table()
@@ -365,6 +368,16 @@ def import_visuals(level):
                         for loop in face.loops:
                             bmesh_color = loop[color_layer]
                             color = colors_sun[loop.vert.index]
+                            bmesh_color.r = color
+                            bmesh_color.g = color
+                            bmesh_color.b = color
+
+                if colors_hemi:
+                    color_layer = b_mesh.loops.layers.color.new('Hemi')
+                    for face in b_mesh.faces:
+                        for loop in face.loops:
+                            bmesh_color = loop[color_layer]
+                            color = colors_hemi[loop.vert.index]
                             bmesh_color.r = color
                             bmesh_color.g = color
                             bmesh_color.b = color
@@ -450,6 +463,41 @@ def import_visuals(level):
 
                 b_mesh.to_mesh(bpy_mesh)
                 loaded_visuals[visual_key] = bpy_mesh.name
+
+                load_custom_normals = False
+
+                if load_custom_normals:
+                    bpy_mesh.normals_split_custom_set_from_vertices(normals=normals)
+                    bpy_mesh.use_auto_smooth = True
+                    bpy_mesh.auto_smooth_angle = math.pi
+
+                debug = False
+
+                if debug:
+                    v_coords = []
+                    v_norms = []
+                    for v in bpy_mesh.vertices:
+                        v_coords.append(v.co)
+                        v_norms.append(normals[v.index])
+
+                    locations = []
+                    for co, n in zip(v_coords, v_norms):
+                        location = (
+                            co[0] + n[0] * 2.0,
+                            co[1] + n[1] * 2.0,
+                            co[2] + n[2] * 2.0,
+                        )
+                        locations.append(location)
+                        locations.append(co)
+
+                    edges = []
+                    for i in range(0, len(locations), 2):
+                        edges.append((i, i + 1))
+
+                    debug_me = bpy.data.meshes.new('debug')
+                    debug_me.from_pydata(locations, edges, ())
+                    debug_ob = bpy.data.objects.new('debug', debug_me)
+                    bpy.context.scene.objects.link(debug_ob)
 
             else:
                 bpy_mesh = bpy.data.meshes[bpy_mesh_name]
