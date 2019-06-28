@@ -283,6 +283,11 @@ def import_visuals(level):
     loaded_visuals = {}
     imported_visuals_names = {}
     level.bpy_materials = {}
+    object_groups = {}
+
+    if level.has_geomx:
+        fast_path_group = bpy.data.groups.new('{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), 'FASTPATH'))
+
     for visual_index, visual in enumerate(level.visuals):
 
         if visual.gcontainer:
@@ -504,7 +509,6 @@ def import_visuals(level):
 
             bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
-            imported_visuals_names[visual_index] = bpy_object.name
 
             if visual.tree_xform:
                 t = visual.tree_xform
@@ -559,6 +563,7 @@ def import_visuals(level):
                 bpy_object_fastpath.draw_type = 'WIRE'
                 bpy.context.scene.objects.link(bpy_object_fastpath)
                 bpy_object_fastpath.parent = bpy_object
+                fast_path_group.objects.link(bpy_object_fastpath)
 
         else:
             bpy_object = bpy.data.objects.new(visual.type, None)
@@ -577,6 +582,14 @@ def import_visuals(level):
                     bpy_child_object.rotation_euler = 0, 0, 0
                     bpy_child_object.scale = 1, 1, 1
                 bpy_child_object.parent = bpy_object
+
+        group_name = '{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), visual.type)
+        group = object_groups.get(group_name, None)
+        if not group:
+            group = bpy.data.groups.new(group_name)
+            object_groups[group_name] = group
+        group.objects.link(bpy_object)
+        imported_visuals_names[visual_index] = bpy_object.name
 
         for sector_index, sector_visual_index in enumerate(sector_visual_ids):
             if sector_visual_index == visual_index:
