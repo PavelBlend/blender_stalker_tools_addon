@@ -321,6 +321,7 @@ def import_visuals(level):
                 colors_light = vertex_buffer.colors_light[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 colors_sun = vertex_buffer.colors_sun[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
                 colors_hemi = vertex_buffer.colors_hemi[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
+
                 for vertex in vertices:
                     b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
                 b_mesh.verts.ensure_lookup_table()
@@ -510,6 +511,18 @@ def import_visuals(level):
 
             bpy_object = bpy.data.objects.new('{0}_{1}'.format(level_name, visual.type), bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
+
+            if visual.gcontainer:
+                shader_data = None
+                vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
+                if vertex_buffer.shader_data:
+                    shader_data = vertex_buffer.shader_data[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
+
+                if shader_data:
+                    vertex_group = bpy_object.vertex_groups.new('shader_data')
+                    for vertex_index, wind_data in enumerate(shader_data):
+                        vertex_group.add([vertex_index, ], wind_data / 0xffff * 50, 'REPLACE')
+
             imported_visuals_names[visual_index] = bpy_object.name
 
             if visual.tree_xform:

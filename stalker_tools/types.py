@@ -81,6 +81,7 @@ class VertexBuffer:
         self.colors_light = []
         self.colors_sun = []
         self.colors_hemi = []
+        self.shader_data = []
 
 
 class GeometryContainer:

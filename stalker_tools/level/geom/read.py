@@ -105,6 +105,7 @@ def vertex_buffers(data, level, fastpath=False):
                         coord_u, coord_v = packed_reader.getf('2h')
                         vertex_buffer.uv.append((coord_u / uv_coefficient, 1 - coord_v / uv_coefficient))
                         shader_data, unused = packed_reader.getf('2H')
+                        vertex_buffer.shader_data.append(shader_data)
                     else:
                         print('UNKNOWN VERTEX BUFFER TYPE:', type)
                 elif format_.usage[usage] == format_.TANGENT:
