@@ -61,10 +61,12 @@ class FastPath:
 class VertexBuffer:
     def __init__(self):
         self.position = []
+        self.normal = []
         self.uv = []
         self.uv_lmap = []
         self.colors_light = []
         self.colors_sun = []
+        self.colors_hemi = []
 
 
 class GeometryContainer:
