@@ -55,6 +55,7 @@ def import_visuals(level):
     lmaps = set(level.lmaps)
     lmaps_0 = set(level.lmaps_0)
     lmaps_1 = set(level.lmaps_1)
+    level_name = os.path.basename(os.path.dirname(level.file_path))
 
     lmaps_textures = {}
     for lmap in lmaps:
@@ -286,7 +287,7 @@ def import_visuals(level):
     object_groups = {}
 
     if level.has_geomx:
-        fast_path_group = bpy.data.groups.new('{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), 'FASTPATH'))
+        fast_path_group = bpy.data.groups.new('{0}_{1}'.format(level_name, 'FASTPATH'))
 
     for visual_index, visual in enumerate(level.visuals):
 
@@ -302,7 +303,7 @@ def import_visuals(level):
             bpy_mesh_name = loaded_visuals.get(visual_key)
             if not bpy_mesh_name:
                 b_mesh = bmesh.new()
-                bpy_mesh = bpy.data.meshes.new(visual.type)
+                bpy_mesh = bpy.data.meshes.new('{0}_{1}'.format(level_name, visual.type))
                 if level.format_version >= format_.XRLC_VERSION_12:
                     bpy_mat = bpy_materials[visual.shader_id]
                 else:
@@ -507,7 +508,7 @@ def import_visuals(level):
             else:
                 bpy_mesh = bpy.data.meshes[bpy_mesh_name]
 
-            bpy_object = bpy.data.objects.new(visual.type, bpy_mesh)
+            bpy_object = bpy.data.objects.new('{0}_{1}'.format(level_name, visual.type), bpy_mesh)
             bpy.context.scene.objects.link(bpy_object)
             imported_visuals_names[visual_index] = bpy_object.name
 
@@ -529,7 +530,7 @@ def import_visuals(level):
             # import fast path geometry
             if visual.fastpath and level.has_geomx:
                 b_mesh = bmesh.new()
-                bpy_mesh = bpy.data.meshes.new('FASTPATH')
+                bpy_mesh = bpy.data.meshes.new('{0}_{1}'.format(level_name, 'FASTPATH'))
 
                 vertex_buffer = level.fastpath.vertex_buffers[visual.fastpath.gcontainer.vb_index]
                 vertices = vertex_buffer.position[visual.fastpath.gcontainer.vb_offset : visual.fastpath.gcontainer.vb_offset + visual.fastpath.gcontainer.vb_size]
@@ -558,7 +559,7 @@ def import_visuals(level):
                 b_mesh.normal_update()
 
                 b_mesh.to_mesh(bpy_mesh)
-                bpy_object_fastpath = bpy.data.objects.new('FASTPATH', bpy_mesh)
+                bpy_object_fastpath = bpy.data.objects.new('{0}_{1}'.format(level_name, 'FASTPATH'), bpy_mesh)
                 bpy_object_fastpath.show_wire = True
                 bpy_object_fastpath.show_all_edges = True
                 bpy_object_fastpath.draw_type = 'WIRE'
@@ -567,7 +568,7 @@ def import_visuals(level):
                 fast_path_group.objects.link(bpy_object_fastpath)
 
         else:
-            bpy_object = bpy.data.objects.new(visual.type, None)
+            bpy_object = bpy.data.objects.new('{0}_{1}'.format(level_name, visual.type), None)
             bpy.context.scene.objects.link(bpy_object)
             if visual.type == 'LOD':
                 bpy_object.empty_draw_size = 3.0
@@ -584,7 +585,7 @@ def import_visuals(level):
                     bpy_child_object.scale = 1, 1, 1
                 bpy_child_object.parent = bpy_object
 
-        group_name = '{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), visual.type)
+        group_name = '{0}_{1}'.format(level_name, visual.type)
         group = object_groups.get(group_name, None)
         if not group:
             group = bpy.data.groups.new(group_name)
@@ -642,9 +643,9 @@ def import_visuals(level):
                 bbox_max[2] > max_bbox[2]:
             max_bbox_sector_index = sector_index
 
-    root_level_object = bpy.data.objects.new('level', None)
+    root_level_object = bpy.data.objects.new(level_name, None)
     bpy.context.scene.objects.link(root_level_object)
-    root_sectors_object = bpy.data.objects.new('sectors', None)
+    root_sectors_object = bpy.data.objects.new('{0}_{1}'.format(level_name, 'sectors'), None)
     bpy.context.scene.objects.link(root_sectors_object)
     root_sectors_object.parent = root_level_object
 
@@ -652,9 +653,9 @@ def import_visuals(level):
     sector_objects = []
     for sector_real_index, sector in enumerate(level.sectors):
         if sector_real_index == max_bbox_sector_index:
-            sector_object_name = 'sector_default'
+            sector_object_name = '{0}_sector_default'.format(level_name)
         else:
-            sector_object_name = 'sector_{0:0>3}'.format(sector_name_index)
+            sector_object_name = '{0}_sector_{1:0>3}'.format(level_name, sector_name_index)
             sector_name_index += 1
         bpy_object = bpy.data.objects.new(sector_object_name, None)
         bpy.context.scene.objects.link(bpy_object)
@@ -718,7 +719,7 @@ def import_visuals(level):
         bpy_material.xray.eshader = 'default'
         bpy_materials[material_index] = bpy_material
 
-    cform_group = bpy.data.groups.new('{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), 'CFORM'))
+    cform_group = bpy.data.groups.new('{0}_{1}'.format(level_name, 'CFORM'))
 
     for sector_index, vertices in sector_vertices.items():
         remap_triangles = sector_remap_triangles[sector_index]
@@ -728,12 +729,10 @@ def import_visuals(level):
             for vertex_index in triangle:
                 new_triangle.append(remap_triangles[vertex_index])
             triangles.append(new_triangle)
-        name = '{0}_cform_{1:0>3}'.format(
-            os.path.basename(os.path.dirname(level.file_path)), (sector_index)
-            )
-        me = bpy.data.meshes.new(name)
+        cform_name = '{0}_cform_{1:0>3}'.format(level_name, (sector_index))
+        me = bpy.data.meshes.new(cform_name)
         me.from_pydata(vertices, (), triangles)
-        ob = bpy.data.objects.new(name, me)
+        ob = bpy.data.objects.new(cform_name, me)
         bpy.context.scene.objects.link(ob)
         ob.parent = sector_objects[sector_index]
         materials = sector_unique_materials[sector_index]
