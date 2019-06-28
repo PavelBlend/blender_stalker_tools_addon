@@ -9,6 +9,7 @@ from .. import types
 from . import importer
 from . import format_
 from . import geom
+from . import cform
 
 
 try:
@@ -233,6 +234,10 @@ def _root(data, level):
         geom.read.file(geomx_path, level, fastpath=True)
 
     level.has_geomx = has_geomx
+
+    cform_path = level.file_path + '.cform'
+    if os.path.exists(cform_path):
+        cform.read.file(cform_path, level)
 
     print('Load Geom:', time.time() - start_time)
 

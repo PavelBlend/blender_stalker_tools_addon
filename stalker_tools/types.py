@@ -1,3 +1,16 @@
+class CForm:
+    def __init__(self):
+        self.version = None
+        self.bbox = None
+        self.vertices_count = None
+        self.triangles_count = None
+        self.vertices = []
+        self.triangles = []
+        self.sectors = []
+        self.materials = []
+        self.sectors_ids = None
+
+
 class BoneMotionTranslation:
     def __init__(self):
         self.translate = []
@@ -50,6 +63,7 @@ class Level:
         self.lmaps_1 = []
         self.sectors = []
         self.fastpath = FastPathGeom()
+        self.cform = CForm()
 
 
 class FastPath:

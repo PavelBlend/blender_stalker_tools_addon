@@ -1,4 +1,3 @@
-
 import os
 import math
 
@@ -7,8 +6,9 @@ import bmesh
 import mathutils
 
 from . import format_
+from .. import xr
 
-from io_scene_xray import utils
+from io_scene_xray import utils, plugin_prefs
 
 
 def create_material(level, texture, shader):
@@ -649,6 +649,7 @@ def import_visuals(level):
     root_sectors_object.parent = root_level_object
 
     sector_name_index = 0
+    sector_objects = []
     for sector_real_index, sector in enumerate(level.sectors):
         if sector_real_index == max_bbox_sector_index:
             sector_object_name = 'sector_default'
@@ -660,3 +661,89 @@ def import_visuals(level):
         bpy_object.parent = root_sectors_object
         root_bpy_object = bpy.data.objects[imported_visuals_names[sector.root]]
         root_bpy_object.parent = bpy_object
+        sector_objects.append(bpy_object)
+
+    # level collision form
+    cform = level.cform
+
+    sectors_triangles = {}
+    sectors_materials = {}
+    for sector_index in cform.sectors_ids:
+        sectors_triangles[sector_index] = []
+        sectors_materials[sector_index] = []
+
+    for triangle_index, triangle in enumerate(cform.triangles):
+        sector = cform.sectors[triangle_index]
+        sectors_triangles[sector].append(triangle)
+        material = cform.materials[triangle_index]
+        sectors_materials[sector].append(material)
+
+    sector_vertices = {}
+    sector_remap_triangles = {}
+    for sector_index, triangles in sectors_triangles.items():
+        sector_vertices[sector_index] = []
+        sector_remap_triangles[sector_index] = {}
+        remap_vertex_indices = {}
+        vertex_index = 0
+        for triangle in triangles:
+            for index, triangle_vertex_index in enumerate(triangle):
+                if not remap_vertex_indices.get(triangle_vertex_index, None):
+                    remap_vertex_indices[triangle_vertex_index] = vertex_index
+                    remap_vertex = cform.vertices[triangle_vertex_index]
+                    sector_remap_triangles[sector_index][triangle_vertex_index] = vertex_index
+                    vertex_index += 1
+                    sector_vertices[sector_index].append(remap_vertex)
+
+    sector_unique_materials = {}
+    cform_unique_materials = set()
+    for sector_index, materials in sectors_materials.items():
+        unique_materials = set()
+        for material in materials:
+            unique_materials.add(material)
+            cform_unique_materials.add(material)
+        unique_materials = list(unique_materials)
+        unique_materials.sort()
+        sector_unique_materials[sector_index] = unique_materials
+
+    bpy_materials = {}
+    gamemtl_path = plugin_prefs.get_preferences().gamemtl_file_auto
+    gamemtl_file = open(gamemtl_path, 'rb')
+    gamemtl_data = gamemtl_file.read()
+    gamemtl_file.close()
+    game_materials = xr.game_materials.parse_gamemtl(gamemtl_data)
+    for material_index in cform_unique_materials:
+        game_material = game_materials[material_index]
+        bpy_material = bpy.data.materials.new(game_material)
+        bpy_material.xray.gamemtl = game_material
+        bpy_material.xray.eshader = 'default'
+        bpy_materials[material_index] = bpy_material
+
+    cform_group = bpy.data.groups.new('{0}_{1}'.format(os.path.basename(os.path.dirname(level.file_path)), 'CFORM'))
+
+    for sector_index, vertices in sector_vertices.items():
+        remap_triangles = sector_remap_triangles[sector_index]
+        triangles = []
+        for triangle in sectors_triangles[sector_index]:
+            new_triangle = []
+            for vertex_index in triangle:
+                new_triangle.append(remap_triangles[vertex_index])
+            triangles.append(new_triangle)
+        name = '{0}_cform_{1:0>3}'.format(
+            os.path.basename(os.path.dirname(level.file_path)), (sector_index)
+            )
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(vertices, (), triangles)
+        ob = bpy.data.objects.new(name, me)
+        bpy.context.scene.objects.link(ob)
+        ob.parent = sector_objects[sector_index]
+        materials = sector_unique_materials[sector_index]
+        remap_material_indices = {}
+        for bpy_material_index, material_index in enumerate(materials):
+            bpy_material = bpy_materials[material_index]
+            me.materials.append(bpy_material)
+            remap_material_indices[material_index] = bpy_material_index
+        materials = sectors_materials[sector_index]
+        for triangle_index, material in enumerate(materials):
+            bpy_material_index = remap_material_indices[material]
+            me.polygons[triangle_index].material_index = bpy_material_index
+        cform_group.objects.link(ob)
