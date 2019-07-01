@@ -50,6 +50,70 @@ def get_bpy_material(level, texture, shader):
     return bpy_material
 
 
+def create_glow_material(level, glow):
+    texture = level.materials[glow.shader_index]
+    shader = level.shaders[glow.shader_index]
+    textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
+    abs_image_path = os.path.join(textures_folder, texture + '.dds')
+    try:
+        bpy_image = bpy.data.images.load(abs_image_path)
+    except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
+        bpy_image = bpy.data.images.new(lmap, 0, 0)
+        bpy_image.source = 'FILE'
+        bpy_image.filepath = abs_image_path
+    bpy_tex = bpy.data.textures.new(name=texture, type='IMAGE')
+    bpy_tex.image = bpy_image
+    bpy_material = bpy.data.materials.new(texture)
+    bpy_material.xray.eshader = shader
+    tex_slot = bpy_material.texture_slots.add()
+    tex_slot.texture = bpy_tex
+    tex_slot.use_map_alpha = True
+    bpy_material.use_shadeless = True
+    bpy_material.use_transparency = True
+    bpy_material.alpha = 0.0
+    return bpy_material
+
+
+def create_glow_mesh(glow):
+    me = bpy.data.meshes.new('glow')
+    ob = bpy.data.objects.new('glow', me)
+    rad = glow.radius
+    verts = [
+        [-rad, 0.0, -rad],
+        [rad, 0.0, -rad],
+        [rad, 0.0, rad],
+        [-rad, 0.0, rad]
+    ]
+    face = [[0, 1, 2, 3], ]
+    me.from_pydata(verts, (), face)
+    bpy.context.scene.objects.link(ob)
+    ob.location = glow.position[0], glow.position[2], glow.position[1]
+    me.uv_textures.new('Texture')
+    return ob
+
+
+def assign_glow_material(ob, material):
+    ob.data.materials.append(material)
+
+
+def create_glow(level, glow):
+    ob = create_glow_mesh(glow)
+    material = create_glow_material(level, glow)
+    assign_glow_material(ob, material)
+    return ob
+
+
+def import_glows(level, level_name, root_level_object):
+    glows_root_object = bpy.data.objects.new('{0}_{1}'.format(level_name, 'glows'), None)
+    bpy.context.scene.objects.link(glows_root_object)
+    glows_root_object.parent = root_level_object
+    glows_group = bpy.data.groups.new('{0}_{1}'.format(level_name, 'GLOWS'))
+    for glow in level.glows:
+        ob = create_glow(level, glow)
+        ob.parent = glows_root_object
+        glows_group.objects.link(ob)
+
+
 def import_visuals(level):
     textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
     lmaps = set(level.lmaps)
@@ -105,7 +169,7 @@ def import_visuals(level):
     if level.format_version >= format_.XRLC_VERSION_12:
         bpy_materials = []
         bpy_materials.append(None)    # first empty shader
-        for material_index, texture in enumerate(level.materials):
+        for material_index, texture in enumerate(level.materials[1 : ]):
             lmap = level.lmaps[material_index]
             if level.format_version in {format_.XRLC_VERSION_13, format_.XRLC_VERSION_14}:
                 if not lmap:
@@ -314,13 +378,14 @@ def import_visuals(level):
                 bpy_mesh.materials.append(bpy_mat)
 
                 vertex_buffer = level.vertex_buffers[visual.gcontainer.vb_index]
-                vertices = vertex_buffer.position[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                normals = vertex_buffer.normal[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                uvs = vertex_buffer.uv[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                uvs_lmap = vertex_buffer.uv_lmap[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                colors_light = vertex_buffer.colors_light[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                colors_sun = vertex_buffer.colors_sun[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
-                colors_hemi = vertex_buffer.colors_hemi[visual.gcontainer.vb_offset : visual.gcontainer.vb_offset + visual.gcontainer.vb_size]
+                vb_slice = slice(visual.gcontainer.vb_offset, visual.gcontainer.vb_offset + visual.gcontainer.vb_size)
+                vertices = vertex_buffer.position[vb_slice]
+                normals = vertex_buffer.normal[vb_slice]
+                uvs = vertex_buffer.uv[vb_slice]
+                uvs_lmap = vertex_buffer.uv_lmap[vb_slice]
+                colors_light = vertex_buffer.colors_light[vb_slice]
+                colors_sun = vertex_buffer.colors_sun[vb_slice]
+                colors_hemi = vertex_buffer.colors_hemi[vb_slice]
 
                 for vertex in vertices:
                     b_mesh.verts.new((vertex[0], vertex[1], vertex[2]))
@@ -759,3 +824,5 @@ def import_visuals(level):
             bpy_material_index = remap_material_indices[material]
             me.polygons[triangle_index].material_index = bpy_material_index
         cform_group.objects.link(ob)
+
+    import_glows(level, level_name, root_level_object)

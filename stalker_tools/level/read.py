@@ -57,14 +57,16 @@ def _sectors(data, level):
         level.sectors.append(sector)
 
 
-def _glows(data):
+def _glows(data, level):
     packed_reader = xray_io.PackedReader(data)
     glows_count = len(data) // format_.GLOW_SIZE
 
     for glow_index in range(glows_count):
-        position = packed_reader.getf('3f')
-        radius = packed_reader.getf('f')[0]
-        shader_index = packed_reader.getf('H')[0]
+        glow = types.Glow()
+        glow.position = packed_reader.getf('3f')
+        glow.radius = packed_reader.getf('f')[0]
+        glow.shader_index = packed_reader.getf('H')[0]
+        level.glows.append(glow)
 
 
 def _light_dynamic(data):
@@ -113,6 +115,9 @@ def _shaders_v13(data, level):
     packed_reader = xray_io.PackedReader(data)
     shaders_count = packed_reader.getf('I')[0]
     empty_shader = packed_reader.gets()
+
+    level.materials.append(empty_shader)
+    level.shaders.append(empty_shader)
 
     for shader_index in range(shaders_count - 1):
         shader = packed_reader.gets()
@@ -200,7 +205,7 @@ def _root(data, level):
             _light_dynamic(chunk_data)
 
         elif chunk_id == chunks.GLOWS:
-            _glows(chunk_data)
+            _glows(chunk_data, level)
 
         elif chunk_id == chunks.SECTORS:
             _sectors(chunk_data, level)

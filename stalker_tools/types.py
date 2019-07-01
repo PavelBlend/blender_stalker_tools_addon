@@ -64,6 +64,7 @@ class Level:
         self.sectors = []
         self.fastpath = FastPathGeom()
         self.cform = CForm()
+        self.glows = []
 
 
 class FastPath:
@@ -99,6 +100,13 @@ class SlideWindowData:
         self.offset = 0
         self.triangles_count = 0
         self.vertices_count = 0
+
+
+class Glow:
+    def __init__(self):
+        self.position = None
+        self.radius = None
+        self.shader_index = None
 
 
 class Visual:
