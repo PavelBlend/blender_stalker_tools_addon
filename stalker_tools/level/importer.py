@@ -114,6 +114,21 @@ def import_glows(level, level_name, root_level_object):
         glows_group.objects.link(ob)
 
 
+def import_portals(level, level_name, root_level_object):
+    portals_root_object = bpy.data.objects.new('{0}_{1}'.format(level_name, 'portals'), None)
+    bpy.context.scene.objects.link(portals_root_object)
+    portals_root_object.parent = root_level_object
+    glows_group = bpy.data.groups.new('{0}_{1}'.format(level_name, 'PORTALS'))
+    for portal in level.portals:
+        portal_name = '{0}_portal_{1:0>3}'.format(level_name, portal.index)
+        portal_mesh = bpy.data.meshes.new(portal_name)
+        portal_object = bpy.data.objects.new(portal_name, portal_mesh)
+        portal_object.parent = portals_root_object
+        bpy.context.scene.objects.link(portal_object)
+        portal_mesh.from_pydata(portal.vertices, (), [[i for i in range(portal.vertices_count)], ])
+        glows_group.objects.link(portal_object)
+
+
 def import_visuals(level):
     textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
     lmaps = set(level.lmaps)
@@ -826,3 +841,4 @@ def import_visuals(level):
         cform_group.objects.link(ob)
 
     import_glows(level, level_name, root_level_object)
+    import_portals(level, level_name, root_level_object)

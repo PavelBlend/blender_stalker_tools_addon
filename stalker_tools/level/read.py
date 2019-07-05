@@ -90,18 +90,29 @@ def _light_dynamic(data):
         phi = packed_reader.getf('f')[0]
 
 
-def _portals(data):
+def _portals(data, level):
     packed_reader = xray_io.PackedReader(data)
     portals_count = len(data) // format_.PORTAL_SIZE
 
     for portal_index in range(portals_count):
-        sector_front = packed_reader.getf('H')[0]
-        sector_back = packed_reader.getf('H')[0]
+        portal = types.Portal()
+        portal.index = portal_index
+        portal.sector_front = packed_reader.getf('H')[0]
+        portal.sector_back = packed_reader.getf('H')[0]
+
+        all_vertices = []
 
         for vertex_index in range(format_.PORTAL_VERTEX_COUNT):
             coord_x, coord_y, coord_z = packed_reader.getf('fff')
+            all_vertices.append((coord_x, coord_z, coord_y))
 
         used_vertices_count = packed_reader.getf('I')[0]
+        portal.vertices_count = used_vertices_count
+
+        for vertex_index in range(used_vertices_count):
+            portal.vertices.append(all_vertices[vertex_index])
+
+        level.portals.append(portal)
 
 
 def _visuals(data, level):
@@ -199,7 +210,7 @@ def _root(data, level):
             visuals_chunk_data = chunk_data
 
         elif chunk_id == chunks.PORTALS:
-            _portals(chunk_data)
+            _portals(chunk_data, level)
 
         elif chunk_id == chunks.LIGHT_DYNAMIC:
             _light_dynamic(chunk_data)

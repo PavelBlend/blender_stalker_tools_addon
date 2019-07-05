@@ -48,6 +48,15 @@ class FastPathGeom:
         self.swis_buffers = []
 
 
+class Portal:
+    def __init__(self):
+        self.index = None
+        self.sector_front = None
+        self.sector_back = None
+        self.vertices = []
+        self.vertices_count = None
+
+
 class Level:
     def __init__(self):
         self.format_version = None
@@ -65,6 +74,7 @@ class Level:
         self.fastpath = FastPathGeom()
         self.cform = CForm()
         self.glows = []
+        self.portals = []
 
 
 class FastPath:

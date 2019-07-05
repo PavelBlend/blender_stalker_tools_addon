@@ -20,8 +20,8 @@ def cform_4(packed_reader, level):
         sectors.add(sector)
 
         material_id = material & 0x3fff
-        unknown_1 = material >> 15
-        unknown_2 = material >> 14 & 1
+        suppress_shadows = material >> 15
+        suppress_wm = material >> 14 & 1
 
         cform.triangles.append((vertex_1, vertex_2, vertex_3))
         cform.materials.append(material_id)
