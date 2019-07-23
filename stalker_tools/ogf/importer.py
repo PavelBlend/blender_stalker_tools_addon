@@ -161,6 +161,31 @@ def import_bones(visual):
         bpy_bone.xray.shape.box_rot = bone.box_rotate
         bpy_bone.xray.shape.box_trn = bone.box_translate
         bpy_bone.xray.shape.box_hsz = bone.box_halfsize
+
+        xray_ik = bpy_bone.xray.ikjoint
+        bone_ik = bone.ik_data
+
+        xray_ik.type = str(bone_ik.joint_type)
+        xray_ik.lim_x_min = bone_ik.joint_limits[0].limit[0]
+        xray_ik.lim_x_max = bone_ik.joint_limits[0].limit[1]
+        xray_ik.lim_x_spr = bone_ik.joint_limits[0].spring_factor
+        xray_ik.lim_x_dmp = bone_ik.joint_limits[0].damping_factor
+        xray_ik.lim_y_min = bone_ik.joint_limits[1].limit[0]
+        xray_ik.lim_y_max = bone_ik.joint_limits[1].limit[1]
+        xray_ik.lim_y_spr = bone_ik.joint_limits[1].spring_factor
+        xray_ik.lim_y_dmp = bone_ik.joint_limits[1].damping_factor
+        xray_ik.lim_z_min = bone_ik.joint_limits[2].limit[0]
+        xray_ik.lim_z_max = bone_ik.joint_limits[2].limit[1]
+        xray_ik.lim_z_spr = bone_ik.joint_limits[2].spring_factor
+        xray_ik.lim_z_dmp = bone_ik.joint_limits[2].damping_factor
+
+        xray_ik.spring = bone_ik.spring_factor
+        xray_ik.damping = bone_ik.damping_factor
+        bpy_bone.xray.ikflags = bone_ik.ik_flags
+        bpy_bone.xray.breakf.force = bone_ik.break_force
+        bpy_bone.xray.breakf.torque = bone_ik.break_torque
+        bpy_bone.xray.friction = bone_ik.friction
+
         bpy_bone.xray.shape.set_curver()
 
     if visual.partitions:

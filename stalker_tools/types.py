@@ -119,9 +119,29 @@ class Glow:
         self.shader_index = None
 
 
+class JointLimit:
+    def __init__(self):
+        self.limit = None
+        self.spring_factor = None
+        self.damping_factor = None
+
+
+class BoneIKData:
+    def __init__(self):
+        self.joint_limits = [JointLimit(), JointLimit(), JointLimit()]
+        self.joint_type = None
+        self.spring_factor = None
+        self.damping_factor = None
+        self.ik_flags = None
+        self.break_force = None
+        self.break_torque = None
+        self.friction = None
+
+
 class Visual:
     class Bone:
         def __init__(self):
+            self.ik_data = BoneIKData()
             self.name = None
             self.offset = None
             self.rotate = None

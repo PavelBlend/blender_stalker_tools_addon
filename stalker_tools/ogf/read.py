@@ -153,36 +153,38 @@ def s_userdata(data, visual):
     visual.user_data = user_data
 
 
-def s_joint_limit(packed_reader):
-    limit = packed_reader.getf('2f')
-    spring_factor = packed_reader.getf('f')[0]
-    damping_factor = packed_reader.getf('f')[0]
+def s_joint_limit(packed_reader, bone, axes_index=None):
+    joint_limit = bone.ik_data.joint_limits[axes_index]
+    joint_limit.limit = packed_reader.getf('2f')
+    joint_limit.spring_factor = packed_reader.getf('f')[0]
+    joint_limit.damping_factor = packed_reader.getf('f')[0]
 
 
 def s_joint_ik_data(packed_reader, bone):
-    type = packed_reader.getf('I')[0]
+    ik_data = bone.ik_data
+    ik_data.joint_type = packed_reader.getf('I')[0]
 
-    s_joint_limit(packed_reader)
-    s_joint_limit(packed_reader)
-    s_joint_limit(packed_reader)
+    s_joint_limit(packed_reader, bone, axes_index=0)
+    s_joint_limit(packed_reader, bone, axes_index=1)
+    s_joint_limit(packed_reader, bone, axes_index=2)
 
-    spring_factor = packed_reader.getf('f')[0]
-    damping_factor = packed_reader.getf('f')[0]
-    ik_flags = packed_reader.getf('I')[0]
-    break_force = packed_reader.getf('f')[0]
-    break_torque = packed_reader.getf('f')[0]
-    friction = packed_reader.getf('f')[0]
+    ik_data.spring_factor = packed_reader.getf('f')[0]
+    ik_data.damping_factor = packed_reader.getf('f')[0]
+    ik_data.ik_flags = packed_reader.getf('I')[0]
+    ik_data.break_force = packed_reader.getf('f')[0]
+    ik_data.break_torque = packed_reader.getf('f')[0]
+    ik_data.friction = packed_reader.getf('f')[0]
 
 
 def s_bone_shape(packed_reader, bone):
-    type = packed_reader.getf('H')[0]
+    shape_type = packed_reader.getf('H')[0]
     flags = packed_reader.getf('H')[0]
 
     obb(packed_reader, bone)
     sphere(packed_reader, bone)
     cylinder(packed_reader, bone)
 
-    bone.shape_type = type
+    bone.shape_type = shape_type
     bone.shape_flags = flags
 
 
