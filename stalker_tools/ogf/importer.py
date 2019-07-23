@@ -22,6 +22,54 @@ MATRIX_BONE = mathutils.Matrix((
 MATRIX_BONE_INVERTED = MATRIX_BONE.inverted().freeze()
 
 
+def merge_children(visual):
+    if not visual.vertices and not visual.indices and visual.children_visuals:
+        first_child = visual.children_visuals[0]
+        vertices_count = len(first_child.vertices)
+
+        if first_child.swidata:
+            first_child.indices = first_child.indices[first_child.swidata[0].offset : ]
+            first_child.swidata = None
+
+        current_material = 0
+        first_child.material_indices = [current_material, ] * (len(first_child.indices) // 3)
+        first_child.textures = [first_child.texture, ]
+        first_child.shaders = [first_child.shader, ]
+
+        for child in visual.children_visuals[1 : ]:
+            current_material += 1
+            first_child.material_indices.extend([current_material, ] * (len(child.indices) // 3))
+            first_child.textures.append(child.texture)
+            first_child.shaders.append(child.shader)
+            first_child.vertices.extend(child.vertices)
+            first_child.uvs.extend(child.uvs)
+            first_child.normals.extend(child.normals)
+
+            if child.swidata:
+                child.indices = child.indices[child.swidata[0].offset : ]
+
+            for vertex_index in child.indices:
+                first_child.indices.append(vertex_index + vertices_count)
+
+            new_weights = {}
+            for bone, weights in child.weghts.items():
+                for vertex_index, weight in weights:
+                    if new_weights.get(bone):
+                        new_weights[bone].append((vertex_index + vertices_count, weight))
+                    else:
+                        new_weights[bone] = [(vertex_index + vertices_count, weight)]
+
+            for bone, new_weight in new_weights.items():
+                if first_child.weghts.get(bone):
+                    first_child.weghts[bone].extend(new_weights[bone])
+                else:
+                    first_child.weghts[bone] = new_weights[bone]
+            first_child.used_bones.update(child.used_bones)
+            vertices_count += len(child.vertices)
+
+        visual.children_visuals = [first_child, ]
+
+
 def import_motions(visual, arm_obj):
     for motion_name, motion in visual.motions.items():
         act = bpy.data.actions.new(motion.name)
@@ -397,41 +445,54 @@ def import_visual(visual, root_object, child=False, root_visual=None):
                 uv_index += 3    # skip 3 face loops
 
         textures_folder = bpy.context.user_preferences.addons['io_scene_xray'].preferences.textures_folder_auto
-        abs_image_path = os.path.join(textures_folder, visual.texture + '.dds')
 
-        bpy_mat = imp_utils.find_suitable_material(visual)
-        if not bpy_mat:
-            bpy_mat = bpy.data.materials.new(visual.texture)
+        def create_material(texture, shader):
+            abs_image_path = os.path.join(textures_folder, texture + '.dds')
+            bpy_mat = bpy.data.materials.new(texture)
             bpy_mat.use_shadeless = True
             bpy_mat.use_transparency = True
             bpy_mat.alpha = 0.0
-            bpy_tex = imp_utils.find_suitable_texture(visual)
+            bpy_tex = imp_utils.find_suitable_texture(texture)
             if not bpy_tex:
-                bpy_tex = bpy.data.textures.new(visual.texture, type='IMAGE')
+                bpy_tex = bpy.data.textures.new(texture, type='IMAGE')
                 bpy_tex.type = 'IMAGE'
             bpy_texture_slot = bpy_mat.texture_slots.add()
             bpy_texture_slot.texture = bpy_tex
             bpy_texture_slot.use_map_alpha = True
 
-            bpy_image = imp_utils.find_suitable_image(visual)
+            bpy_image = imp_utils.find_suitable_image(texture)
             if not bpy_image:
                 try:
                     bpy_image = bpy.data.images.load(abs_image_path)
                 except RuntimeError as ex:  # e.g. 'Error: Cannot read ...'
-                    bpy_image = bpy.data.images.new(visual.texture, 0, 0)
+                    bpy_image = bpy.data.images.new(texture, 0, 0)
                     bpy_image.source = 'FILE'
                     bpy_image.filepath = abs_image_path
 
             bpy_tex.image = bpy_image
-            bpy_mat.xray.eshader = visual.shader
+            bpy_mat.xray.eshader = shader
             bpy_mat.xray.cshader = 'default'
             bpy_mat.xray.gamemtl = 'default'
             bpy_mat.xray.version = utils.plugin_version_number()
             bpy_mesh.use_auto_smooth = True
             bpy_mesh.auto_smooth_angle = math.pi
             bpy_mesh.show_edge_sharp = True
+            return bpy_mat
 
-        bpy_mesh.materials.append(bpy_mat)
+        if not getattr(visual, 'textures', None) and not getattr(visual, 'shaders', None):
+            bpy_mat = imp_utils.find_suitable_material(visual.texture, visual.shader)
+            if not bpy_mat:
+                bpy_mat = create_material(visual.texture, visual.shader)
+            bpy_mesh.materials.append(bpy_mat)
+        else:
+            for texture, shader in zip(visual.textures, visual.shaders):
+                bpy_mat = imp_utils.find_suitable_material(texture, shader)
+                if not bpy_mat:
+                    bpy_mat = create_material(texture, shader)
+                bpy_mesh.materials.append(bpy_mat)
+            for tris_index, tris in enumerate(bm_faces):
+                if tris:
+                    tris.material_index = visual.material_indices[tris_index]
         b_mesh.to_mesh(bpy_mesh)
 
         # assign weghts
@@ -464,12 +525,14 @@ def set_xray_props_in_root_object(visual, root_object):
 
 def import_children_visuals(visual, root_obj):
     for child_visual in visual.children_visuals:
-        if root_obj.type == 'ARMATURE':
-            child_visual.armature = root_obj
+        if root_obj:
+            if root_obj.type == 'ARMATURE':
+                child_visual.armature = root_obj
         import_visual(child_visual, root_obj, child=True, root_visual=visual)
 
 
 def import_ogf(visual):
+    merge_children(visual)
     if len(visual.bones):
         arm_obj = import_bones(visual)
         set_xray_props_in_root_object(visual, arm_obj)
@@ -477,9 +540,9 @@ def import_ogf(visual):
         if visual.motions:
             import_motions(visual, arm_obj)
     else:
-        if len(visual.children_visuals):
+        if len(visual.children_visuals) > 1:
             root_object = import_root_object(visual.file_name)
             set_xray_props_in_root_object(visual, root_object)
             import_children_visuals(visual, root_object)
         else:
-            import_visual(visual, None)
+            import_children_visuals(visual, None)
