@@ -1,4 +1,10 @@
-# S.T.A.L.K.E.R. Tools
+# Поддержка аддона
+
+### Данный аддон не поддерживается. Используйте аддон [blender-xray](https://github.com/PavelBlend/blender-xray).
+### Этот аддон является экспериментальным. Все возможности (кроме импорта ogf) есть в аддоне blender-xray.
+### Для импорта ogf, конвертируйте их в формат object с помощью [конвертера](https://github.com/abramcumner/xray_re-tools/releases).
+
+# ~~S.T.A.L.K.E.R. Tools~~
 
 S.T.A.L.K.E.R. Tools - это аддон для программы [blender](http://www.blender.org/), который позволяет импортировать игровые уровни (level), игровые модели (ogf) и игровые анимации (omf) из игры S.T.A.L.K.E.R.
 
